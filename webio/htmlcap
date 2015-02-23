@@ -1,0 +1,48 @@
+GET /docs/writeus/error.html HTTP/1.1
+Host: docs.yahoo.com
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.7.5) Gecko/20041107 Firefox/1.0
+Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Keep-Alive: 300
+Connection: keep-alive
+Referer: http://www.google.com/search?hl=en&q=HTML+error+codes&btnG=Google+Search
+
+HTTP/1.0 200 OK
+Date: Mon, 26 Feb 2007 01:43:54 GMT
+P3P: policyref="http://p3p.yahoo.com/w3c/p3p.xml", CP="CAO DSP COR CUR ADM DEV TAI PSA PSD IVAi IVDi CONi TELo OTPi OUR DELi SAMi OTRi UNRi PUBi IND PHY ONL UNI PUR FIN COM NAV INT DEM CNT STA POL HEA PRE GOV"
+Connection: close
+Content-Type: text/html
+Set-Cookie: B=a266l6h2u4eqq&b=2; expires=Thu, 15 Apr 2010 20:00:00 GMT; path=/; domain=.yahoo.com
+
+
+
+
+
+GET / HTTP/1.1
+Host: 192.168.1.173:88
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.7.5) Gecko/20041107 Firefox/1.0
+Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Keep-Alive: 300
+Connection: keep-alive
+Referer: http://127.0.0.1:88/netmap.htm
+Authorization: Basic YWRtaW46YWRtaW4=
+
+HTTP/1.1 200 OK
+Server: Praemio TheAgent 1.0.0.64
+Date: Sat, 16 Jul 2005 12:00:00 GMT
+Content-type: text/html
+Connection: Keep-Alive
+Keep-Alive: timeout=15, max=100
+Transfer-Encoding: chunked
+
+30c
+<html>
+<head>
+   <title>Praemio TheAgent</title>
+</head>
+
