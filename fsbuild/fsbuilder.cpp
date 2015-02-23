@@ -150,7 +150,7 @@ argcmp(char * dest, char * src, int maxlength )
  */
 
 int
-tagcmp(char * tag1, char * tag2)
+tagcmp(const char * tag1, const char * tag2)
 {
    int   length = 0;
 
@@ -217,10 +217,10 @@ argterm(char * arg)
  */
 
 char * 
-get_tagparm(char * parm, char * html, char * dest)
+get_tagparm(const char * parm, const char * html, char * dest)
 {
-   int      i;
-   char *   cp;
+   int            i;
+   const char *   cp;
 
    *dest = 0;  // clear return value - assume failure
 
@@ -469,12 +469,12 @@ public:
     reference * next;
     char refname[NAMELENGTH];
 
-    reference(char * name);
+    reference(const char * name);
 };
 
 reference * references;
 
-reference::reference(char * name)
+reference::reference(const char * name)
 {
    if(strlen(name) >= NAMELENGTH)
    {
@@ -509,12 +509,12 @@ ref_lookup(char * refname)
 
 struct option
 {
-   char     opt_char;      // char to invoke option
-   char *   opt_help;      // help text 
-   int      opt_flags;     // OF_CMDLINE or not
-   int      (*opt_setopt)(struct option *, char * parm);
-   void *   target;        //parameter for setop
-   long     opt_maskbit;   // flag to effect (if any)
+   const char     opt_char;            // char to invoke option
+   const char *   opt_help;            // help text 
+   int            opt_flags;           // OF_CMDLINE or not
+   int          (*opt_setopt)(struct option *, char * parm);
+   void *         target;              // parameter for setop
+   long           opt_maskbit;         // flag to effect (if any)
 };
 
 /* bit values for opt_flags bitmask */
@@ -1075,7 +1075,7 @@ bldform(filedata * newfile, FILE * outcode)
 
 
 int 
-newref(char * refname, char * tagname)
+newref(const char * refname, const char * tagname)
 {
     int     taglen;
     char    tagvalue[TAGSIZE];
