@@ -26,6 +26,12 @@
 #include "webio.h"
 #include "webfs.h"
 
+#include <stdlib.h>
+
+#ifdef LINUX
+#include <unistd.h>
+#endif
+
 /* This file contins the code to manage webio objects, such as sessions,
  * tx buffers, and forms. It also contains heap "wrappers" with error
  * checking.

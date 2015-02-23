@@ -27,6 +27,12 @@
 #include "webio.h"
 #include "webfs.h"
 
+#include <stdlib.h>
+
+#ifdef LINUX
+#include <unistd.h>
+#endif
+
 /* This file contains the main entry points for the webio library */
 
 
@@ -366,7 +372,7 @@ wi_sockaccept()
    struct sockaddr_in sa;
    socktype    newsock;
    wi_sess *   newsess;
-   int         sasize;
+   socklen_t   sasize;
    int         error;
 
    sasize = sizeof(struct sockaddr_in);
@@ -384,7 +390,7 @@ wi_sockaccept()
       if(htonl(sa.sin_addr.s_addr) != 0x7F000001)
       {
          struct sockaddr_in local;
-         int slen;
+         socklen_t slen;
 
          /* wasn't loopback, check for local IP.
    	    * First get socket's local IP

@@ -152,8 +152,6 @@ argcmp(char * dest, char * src, int maxlength )
 int
 tagcmp(const char * tag1, const char * tag2)
 {
-   int   length = 0;
-
    while(*tag1 > ' ')
    {
       // if tag ended return true
@@ -725,7 +723,7 @@ struct option options[] =
 void
 usage()
 {
-   int      i;
+   unsigned int i;
 
    printf("Usage: fxbuild [options] filelist \n");
    printf("   Command line options\n");
@@ -748,8 +746,8 @@ usage()
 int
 setoption(char * argp, char * argnext)
 {
-   int   i;
-   int   aadd;    // amount to add to arg count
+   unsigned int i;
+   int aadd;    // amount to add to arg count
 
    argp++;   // point past '-' to arg char
    for(i = 0; i < NUMOPTIONS; i++)
@@ -1031,7 +1029,7 @@ bldform(filedata * newfile, FILE * outcode)
 
              fprintf(outcode, 
                  "/* WARNING - action \"%s\" (%s line %d) unreffed in input file forms. */\n",
-                 newfile->filename);
+                 newfile->filename, listfilename, newfile->in_line);
           }
        }
        fprintf(outcode, "\n   return NULL;      /*  OK return */\n}\n\n\n");
@@ -1115,7 +1113,6 @@ main(int argc, char * argv[] )
    int      aadd;
    int      efloop;
    int      ccodes = 0;
-   int      efsforms = 0;
    int      listfile_line = 0;
    char     emfflags[128];
    filedata * newfile;
@@ -1293,7 +1290,7 @@ main(int argc, char * argv[] )
          }
          fprintf(outdata, "\n};\n\n" );
 
-         fprintf(outheader, "extern  unsigned char %s[%d];\n", 
+         fprintf(outheader, "extern  unsigned char %s[%ld];\n", 
             newfile->caname, newfile->casize );
       }
    }
@@ -1386,7 +1383,7 @@ main(int argc, char * argv[] )
       {
          fprintf(outdata, "   %s,   /* C data array */\n",
             newfile->caname);
-         fprintf(outdata, "   %u,        /* length of original file data */\n",
+         fprintf(outdata, "   %lu,        /* length of original file data */\n",
             newfile->casize );
          fprintf(outdata, "   NULL,        /* SSI/CGI data routine */\n");
       }

@@ -26,6 +26,9 @@
 #include "webio.h"
 #include "webfs.h"
 
+#ifdef LINUX
+#include <unistd.h>
+#endif
 
 char hdrbuf[HDRBUFSIZE];   /* For building HTTP headers */
 
@@ -42,11 +45,11 @@ struct httperror {
    char *   errtext;
 } httperrors[] = 
 {
-   400,  "Bad HTTP request",
-   401,  "Authentication required",
-   402,  "Payment required",
-   404,  "File not found",
-   501,  "Server error",
+   { 400,  "Bad HTTP request" },
+   { 401,  "Authentication required" },
+   { 402,  "Payment required" },
+   { 404,  "File not found" },
+   { 501,  "Server error" },
 };
 
 /* wi_senderr()
@@ -511,15 +514,15 @@ struct wi_ftype {
    int      flags;      /* bitmask of the FT_ flags */
 } wi_ftypes[] = 
 {
-   0x4A504700, "image/jpeg", FT_BINARY,   /* JPG */
-   0x4A504547, "image/jpeg", FT_BINARY,   /* JPEG */
-   0x504E4700, "image/png",  FT_BINARY,   /* PNG */
-   0x47494600, "image/gif",  FT_BINARY,   /* GIF */
-   0x57415600, "audio/wav", FT_BINARY,    /* WAV */
-   0x4D503300, "audio/mp3", FT_BINARY,    /* MP3 */
-   0x574D5600, "video/x-ms-wmv", FT_BINARY,     /* WMV */
-   0x50444600, "application/pdf", FT_BINARY,    /* PDF */
-   0x53574600, "application/x-shockwave-flash", FT_BINARY,    /* SWF */
+   { 0x4A504700, "image/jpeg", FT_BINARY }, /* JPG */
+   { 0x4A504547, "image/jpeg", FT_BINARY }, /* JPEG */
+   { 0x504E4700, "image/png",  FT_BINARY }, /* PNG */
+   { 0x47494600, "image/gif",  FT_BINARY }, /* GIF */
+   { 0x57415600, "audio/wav", FT_BINARY }, /* WAV */
+   { 0x4D503300, "audio/mp3", FT_BINARY }, /* MP3 */
+   { 0x574D5600, "video/x-ms-wmv", FT_BINARY }, /* WMV */
+   { 0x50444600, "application/pdf", FT_BINARY }, /* PDF */
+   { 0x53574600, "application/x-shockwave-flash", FT_BINARY }, /* SWF */
 };
 
 

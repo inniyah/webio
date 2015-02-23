@@ -68,6 +68,10 @@ typedef unsigned long u_long;
 #define stricmp(s1,s2) strcasecmp(s1,s2)
 #endif
 
+#ifndef strnicmp
+int strnicmp(char * s1, char * s2, int length);
+#endif
+
 //extern void * malloc(int size);
 
 #ifdef LINUX_DEMO

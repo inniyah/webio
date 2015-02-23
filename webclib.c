@@ -25,6 +25,8 @@
 #include "webio.h"
 #include "webfs.h"
 
+#include <stdlib.h>
+#include <string.h>
 
 static char output[DDB_SIZE];
 int   ssi_threshhold = DDB_SIZE/2;

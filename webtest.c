@@ -35,7 +35,9 @@
 #include "webfs.h"
 #include "wsfdata.h"
 
-extern void	exit(int code);
+#include <stdlib.h>
+
+extern void exit(int code);
 
 /* Sample authentication code & "database" */
 static char test_name[32] = {"john"};
@@ -169,7 +171,7 @@ memory_ssi(wi_sess * sess, EOFILE * eofile)
 int
 wi_cvariables(wi_sess * sess, int token)
 {
-   int   e;
+   int e = 0;
 
    switch(token)
    {
@@ -195,9 +197,9 @@ testaction_cgi(wi_sess * sess,  EOFILE * eofile)
    your_name = wi_formvalue(sess, "your_name");   /* default: John */
 
     if( wi_redirect(sess, "index.html") )
-		return("redir failed");
-	else
-		return NULL;
+        return("redir failed");
+    else
+        return NULL;
 }
 
 
