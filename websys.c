@@ -32,6 +32,14 @@
  *
  */
 
+static char * day[] = 
+{   "Sun","Mon","Tues","Wed","Thurs","Fri","Sat"};
+
+static char * month[] = 
+{  "Jan","Feb","March","April","May","June",
+   "July","Aug","Sept","Oct","Nov","Dec", 
+};
+
 #ifdef _WINSOCKAPI_
 int 
 WI_NOBLOCKSOCK(long sock)
@@ -44,14 +52,6 @@ WI_NOBLOCKSOCK(long sock)
 }
 
 /* format: "Mon, 26 Feb 2007 01:43:54 GMT" */
-
-static char * day[] = 
-{   "Sun","Mon","Tues","Wed","Thurs","Fri","Sat"};
-
-static char * month[] = 
-{  "Jan","Feb","March","April","May","June",
-   "July","Aug","Sept","Oct","Nov","Dec", 
-};
 
 static char datebuf[36];
 
@@ -83,10 +83,30 @@ wi_getdate(wi_sess * sess)
 
 #ifdef LINUX
 
+static char datebuf[36];
+
+#include <time.h>
+
 char * 
 wi_getdate(wi_sess * sess)
 {
+   time_t      timeval;
+   struct tm * gmt;
 
+   USE_ARG(sess);
+   timeval = time(NULL);
+   gmt = gmtime(&timeval);
+
+   sprintf(datebuf, "%s, %u %s %u %u:%u:%u GMT",
+      day[gmt->tm_wday],
+      gmt->tm_mday,
+      month[gmt->tm_mon],
+      gmt->tm_year + 1900, /* Windows year is based on 1900 */
+      gmt->tm_hour,
+      gmt->tm_min,
+      gmt->tm_wday);
+
+   return datebuf;
 }
 
 int

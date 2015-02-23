@@ -993,7 +993,6 @@ newform(char * html, int length, filedata * file, int line)
 int
 bldform(filedata * newfile, FILE * outcode)
 {
-   char *   cname;
    form *   formp;
 
    if((*newfile->opset.routine == 0) && 
@@ -1049,7 +1048,7 @@ bldform(filedata * newfile, FILE * outcode)
             continue;
 
          // convert name to a C expression
-         cname = maketoken(ctl->name, 0, LOWERCASE);
+         maketoken(ctl->name, 0, LOWERCASE);
 
          if(i == 0)
             fprintf(outcode, "   char *   %s;\n", ctl->name);

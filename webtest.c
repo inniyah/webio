@@ -108,6 +108,7 @@ main( int argc, char * argv[] )
 
 /* Return true if user gets access to the embedded file, 0 if not. */
 
+int
 wfs_auth(void * fd, char * name, char * password)
 {
 
@@ -195,6 +196,7 @@ testaction_cgi(wi_sess * sess,  EOFILE * eofile)
    char *   your_name;
 
    your_name = wi_formvalue(sess, "your_name");   /* default: John */
+   (void)your_name;
 
     if( wi_redirect(sess, "index.html") )
         return("redir failed");
