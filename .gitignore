@@ -1,0 +1,15 @@
+*~
+*.bk
+*.bak
+*.o
+*.a
+*.exe
+*.lib
+*.dll
+*.so
+*.so*
+fsbuild/fsbuilder
+webio/fsbuilder
+webio/webio
+webio/htmldata.c
+webio/imgdata.c
