@@ -40,7 +40,7 @@ u_long   wi_totalblocks = 0;
 
 
 /* Webio's heap system allocates a bit more memory from the system
- * heap than the size passsed. The extra space contains the ascii for
+ * heap than the size passed. The extra space contains the ascii for
  * pattern "MEMM". The front marker also has a length field so we
  * can find the back marker.
  */

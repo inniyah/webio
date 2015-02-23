@@ -57,6 +57,7 @@ typedef unsigned long u_long;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <malloc.h>
 
 #define WI_NOBLOCKSOCK(socket) fcntl(socket, F_SETFL, O_NONBLOCK)
 
