@@ -15,7 +15,7 @@ OBJS = \
 
 CFLAGS= -O2 -g -Wall
 LDFLAGS= -Wl,-z,defs -Wl,--as-needed -Wl,--no-undefined
-DEFS=-DLINUX -DLINUX_DEMO
+DEFS=-DLINUX -DLINUX_DEMO -DUSE_EMFILES
 LIBS=
 INCS=
 
