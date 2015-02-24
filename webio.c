@@ -43,7 +43,7 @@ socktype wi_listen;
 socktype wi_highsocket;
 
 /* Port number on which to listen. May be changed prior to calling webinit */
-int   httpport = 80;
+int   httpport = 8888;
 
 int   wi_running = FALSE;  /* TRUE while server is running */
 
