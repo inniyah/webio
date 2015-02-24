@@ -759,11 +759,11 @@ const int pr2six[256]={
 #define BYTE unsigned char
 
 void
-wi_uudecode(unsigned char * bufcoded, BYTE * pbuffdecoded)
+wi_uudecode(unsigned char * bufcoded, unsigned char * pbuffdecoded)
 {
     int              nbytesdecoded;
     unsigned char *  bufin;
-    BYTE *           bufout;
+    unsigned char *  bufout;
     int              nprbytes;
 
     /* Strip leading whitespace. */
@@ -780,7 +780,7 @@ wi_uudecode(unsigned char * bufcoded, BYTE * pbuffdecoded)
     nbytesdecoded = ((nprbytes+3)/4) * 3;
 
     bufout = pbuffdecoded;
-    bufin = bufcoded;
+    bufin = (unsigned char *)bufcoded;
 
     while (nprbytes > 0) {
         *(bufout++) =
@@ -834,7 +834,7 @@ wi_decode_auth(wi_sess * sess, char * name, int name_len, char * pass, int pass_
          dtrap();    // crude overflow test failed
          return;
       }
-      wi_uudecode((unsigned char *)authdata, (u_char*)(&decode[0]));
+      wi_uudecode((u_char*)authdata, (u_char*)(&decode[0]));
       divide = strchr(decode, ':');
       if(!divide)
       {
