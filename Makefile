@@ -1,6 +1,6 @@
 all: fsbuilder webio
 
-INCUDES = webfs.h  webio.h  websys.h  wfsdata.h
+INCUDES = webfs.h  webio.h  websys.h
 
 OBJS = \
 	htmldata.o \
@@ -15,7 +15,7 @@ OBJS = \
 
 CFLAGS= -O2 -g -Wall
 LDFLAGS= -Wl,-z,defs -Wl,--as-needed -Wl,--no-undefined
-DEFS=-DLINUX -DLINUX_DEMO -DUSE_EMFILES
+DEFS=-DLINUX -DLINUX_DEMO -DUSE_EMFILES -DUSE_SYSFILES
 LIBS=
 INCS=
 

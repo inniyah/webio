@@ -165,8 +165,6 @@ extern u_long cticks;
 
 /*********** File system mapping ***************/
 
-#define  USE_EMFILES 1
-#define  USE_SYSFILES 1
 #include <stdio.h>
 
 /*********** debug support **************/
