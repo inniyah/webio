@@ -3,21 +3,21 @@ all: fsbuilder webio
 INCUDES = webfs.h  webio.h  websys.h
 
 OBJS = \
-	htmldata.o \
-	webclib.o \
-	webfs.o \
-	webio.o \
-	webobjs.o \
-	websys.o \
-	webtest.o \
-	webutils.o \
-	imgdata.o
+	data/htmldata.o \
+	data/imgdata.o \
+	obj/webclib.o \
+	obj/webfs.o \
+	obj/webio.o \
+	obj/webobjs.o \
+	obj/websys.o \
+	obj/webtest.o \
+	obj/webutils.o
 
 CFLAGS= -O2 -g -Wall
 LDFLAGS= -Wl,-z,defs -Wl,--as-needed -Wl,--no-undefined
 DEFS=-DLINUX -DLINUX_DEMO
 LIBS=
-INCS=
+INCS=-Isrc -Idata
 
 # Use system "fopen" files
 DEFS+=-DWI_STDFILES
@@ -34,17 +34,23 @@ webio: $(OBJS)
 fsbuilder: fsbuild/fsbuilder.o
 	g++ $(LDFLAGS) $+ -o $@ $(LIBS)
 
-imgdata.o: imgdata.c
+data/imgdata.o: data/imgdata.c
 	gcc -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS)
 
-imgdata.c: fsbuilder snail.gif prlogo.gif filelist
-	./fsbuilder -o htmldata.c filelist
+data/imgdata.c: fsbuilder data/snail.gif data/prlogo.gif data/filelist
+	cd data && ../fsbuilder -o htmldata.c filelist
 
-htmldata.o: htmldata.c
+data/htmldata.o: data/htmldata.c
 	gcc -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS)
 
-htmldata.c: fsbuilder index.html filelist
-	./fsbuilder -o htmldata.c filelist
+data/htmldata.c: fsbuilder data/index.html data/filelist
+	cd data && ../fsbuilder -o htmldata.c filelist
+
+obj/%.o: src/%.cpp
+	g++ -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS)
+
+obj/%.o: src/%.c
+	gcc -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS)
 
 %.o: %.cpp
 	g++ -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS)
@@ -56,5 +62,5 @@ htmldata.c: fsbuilder index.html filelist
 clean:
 	rm -f $(OBJS)
 	rm -f webio fsbuilder
-	rm -f imgdata.c htmldata.c
+	rm -f data/imgdata.c data/htmldata.c data/wsfcode.c data/wsfdata.h
 	rm -f *.o */*.o *.a */*.a *~

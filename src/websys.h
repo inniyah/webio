@@ -23,7 +23,7 @@
  */
 
 #ifndef _WEBSYS_H_
-#define _WEBSY_H_    1
+#define _WEBSYS_H_    1
 
 /* This file contains definitions intended for modification during porting */
 

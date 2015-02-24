@@ -1,0 +1,2 @@
+34 This is ssi1 <BR>
+Another SSI: 12<!--#include file="data/ssi2" -->34

@@ -36,7 +36,6 @@
 /* This file contains the main entry points for the webio library */
 
 
-
 /* The web server "listen" socket */ 
 socktype wi_listen;
 
@@ -70,16 +69,13 @@ struct timeval   wi_seltmo = {0,0}; /* polled mode - no blocking */
  * Returns 0 if OK, else negative error code.
  */
 
-int
-wi_init()
-{
+int wi_init() {
    struct sockaddr_in   wi_sin;
    int      error;
 
    /* Create the web server "listen" socket */
    wi_listen = socket(AF_INET, SOCK_STREAM, 0);
-   if(wi_listen == INVALID_SOCKET)
-   {
+   if(wi_listen == INVALID_SOCKET) {
       dprintf("Error open socket for listen\n");
       return WIE_SOCKET;
    }
@@ -89,15 +85,13 @@ wi_init()
    wi_sin.sin_port = htons( (short)httpport);
    error = bind(wi_listen, (struct sockaddr*)&wi_sin, 
       sizeof(struct sockaddr_in));
-   if(error)
-   {
+   if(error) {
       dprintf("Error %d binding web server\n", error);
       return WIE_SOCKET;
    }
 
    error = listen(wi_listen, 15);
-   if (error)
-   {
+   if (error) {
       dprintf("Error %d starting listen\n", error);
       return WIE_SOCKET;
    }   
@@ -116,9 +110,7 @@ wi_init()
  */
 
 
-int
-wi_poll()
-{
+int wi_poll() {
    wi_sess * sess;
    wi_sess * next_sess;
    int   sessions = 0;
@@ -138,46 +130,42 @@ wi_poll()
 
    /* loop through list of open sessions looking for work */
    recvs = sends = 0;
-   for(sess = wi_sessions; sess; sess = sess->ws_next)
-   {
-      if(sess->ws_socket == INVALID_SOCKET)
-         continue;
-
-      /* If socket is reading, load for a select */
-      if(sess->ws_state == WI_HEADER)
-      {
-         recvs++;
-         FD_SET(sess->ws_socket, &sel_recv);
-         if(sess->ws_socket > wi_highsocket)
-             wi_highsocket = sess->ws_socket;
+   for(sess = wi_sessions; sess; sess = sess->ws_next) {
+      if(sess->ws_socket == INVALID_SOCKET) {
+    	  continue;
       }
 
-      if((sess->ws_txbufs) ||
-         (sess->ws_flags & WF_BINARY))
-      {
+      /* If socket is reading, load for a select */
+      if(sess->ws_state == WI_HEADER) {
+         recvs++;
+         FD_SET(sess->ws_socket, &sel_recv);
+         if(sess->ws_socket > wi_highsocket) {
+        	 wi_highsocket = sess->ws_socket;
+         }
+      }
+
+      if((sess->ws_txbufs) || (sess->ws_flags & WF_BINARY)) {
          sends++;
          FD_SET(sess->ws_socket, &sel_send);
-         if(sess->ws_socket > wi_highsocket)
-             wi_highsocket = sess->ws_socket;
+         if(sess->ws_socket > wi_highsocket) {
+        	 wi_highsocket = sess->ws_socket;
+         }
       }
    }
    wi_highsocket++;     /* Select mumbo-jumbo */
 
    /* See if any of the sockets have input or ready to send */
    sessions = select( wi_highsocket, &sel_recv, &sel_send, NULL, &wi_seltmo);
-   if(sessions == SOCKET_ERROR)
-   {
+   if(sessions == SOCKET_ERROR) {
       error = errno;
       dprintf("select error %d\n", error );
       return WIE_SOCKET;
    }
 
    /* see if we have a new connection request */
-   if(FD_ISSET(wi_listen, &sel_recv))
-   {
+   if(FD_ISSET(wi_listen, &sel_recv)) {
       error = wi_sockaccept();
-      if(error)
-      {
+      if(error) {
          printf("Socket accept error %d\n", error);
          return error;
       }
@@ -335,7 +323,7 @@ another_state:
  * Returns: 0 if normal shutdown, else negative error code.
  */
 
-int   wi_thread()
+int wi_thread()
 {
    int   sessions = 0;
    wi_sess *  sess;
