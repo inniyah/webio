@@ -162,7 +162,7 @@ wi_ftell(WI_FILE * fd)
 }
 
 /***************** Optional embedded FS starts here *****************/
-#ifdef USE_EMFILES
+#ifdef WI_EMBFILES
 
 #include "wsfdata.h"
 
@@ -418,5 +418,5 @@ em_push(void * fd, wi_sess * sess)
 }
 
 
-#endif  /* USE_EMFILES */
+#endif  /* WI_EMBFILES */
 

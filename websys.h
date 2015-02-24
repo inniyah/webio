@@ -27,14 +27,6 @@
 
 /* This file contains definitions intended for modification during porting */
 
-/*********** Optional webio features - comment out to remove ***************/
-
-#define WI_STDFILES  1     /* Use system "fopen" files */
-#define WI_EMBFILES  1     /* Use embedded FS */
-
-#define WI_THREAD    1     /* Drive webio with a thread rather than polling */
-
-
 /*********** Webio sizes and limits ***************/
 
 #define WI_RXBUFSIZE    1536  /* rxbuf[] total size */

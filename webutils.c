@@ -589,7 +589,7 @@ wi_ssi(wi_sess * sess)
    wi_file *   wrapper;       /* info about containing file */
    int         error;
    char        paren;
-#ifdef USE_EMFILES
+#ifdef WI_EMBFILES
    wi_file *   ssi;           /* info about SSI file */
 #endif
 
@@ -630,7 +630,7 @@ wi_ssi(wi_sess * sess)
       return error;
    }
 
-#ifdef USE_EMFILES
+#ifdef WI_EMBFILES
    /* See if the SSI file is a code-based embedded file */
    ssi = sess->ws_filelist;
    if(ssi->wf_routines == &emfs)
@@ -667,7 +667,7 @@ wi_ssi(wi_sess * sess)
       wi_fclose(ssi);
       return 0;
    }
-#endif /* USE_EMFILES */
+#endif /* WI_EMBFILES */
 
    error = wi_readfile(sess);
    return error;

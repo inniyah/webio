@@ -15,9 +15,18 @@ OBJS = \
 
 CFLAGS= -O2 -g -Wall
 LDFLAGS= -Wl,-z,defs -Wl,--as-needed -Wl,--no-undefined
-DEFS=-DLINUX -DLINUX_DEMO -DUSE_EMFILES -DUSE_SYSFILES
+DEFS=-DLINUX -DLINUX_DEMO
 LIBS=
 INCS=
+
+# Use system "fopen" files
+DEFS+=-DWI_STDFILES
+
+# Use embedded FS
+DEFS+=-DWI_EMBFILES
+
+# Drive webio with a thread rather than polling
+DEFS+=-DWI_THREAD
 
 webio: $(OBJS)
 	g++ $(LDFLAGS) $+ -o $@ $(LIBS)

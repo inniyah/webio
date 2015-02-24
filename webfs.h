@@ -77,7 +77,7 @@ extern   int         wi_movebinary(wi_sess * sess, wi_file * fi);
 
 
 /***************** Optional embedded FS starts here *****************/
-#ifdef USE_EMFILES
+#ifdef WI_EMBFILES
 
 #define EM_FILENAMELEN  32
 
@@ -135,7 +135,7 @@ typedef int (CGI_ROUTINE)(wi_sess *, EOFILE*, wi_form*);
 typedef int (PUSH_ROUTINE)(wi_sess *, EOFILE*);
 
 
-#endif  /* USE_EMFILES */
+#endif  /* WI_EMBFILES */
 
 
 #endif /* _WEBFS_H_ */
