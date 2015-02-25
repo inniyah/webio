@@ -166,7 +166,7 @@ int wi_poll() {
    if (FD_ISSET(wi_listen, &sel_recv)) {
       error = wi_sockaccept();
       if (error) {
-         printf("Socket accept error %d\n", error);
+         dprintf("Socket accept error %d\n", error);
          return error;
       }
    }

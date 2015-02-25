@@ -81,16 +81,6 @@ extern u_long cticks;
 
 /* Windows (winsock) version */
 
-
-#ifdef BUSTER
-#include "busterport.h"
-#pragma warning(disable: 4152 )
-extern   int      WI_NOBLOCKSOCK(long sock);
-#else  /* not BUSTER, windows demo */
-
-/* stifle unavoidable compiler warnings */
-#pragma warning(disable: 4100 4054 4115 4702 4996 )
-
 #include <ctype.h>   /* for "isdigit()" */
 #include <stdio.h>
 #include <stdlib.h>   /* for atoi(), exit() */
@@ -100,15 +90,12 @@ extern   int      WI_NOBLOCKSOCK(long sock);
 #include <winsock2.h>
 #include <windows.h>
 
-
 #define socktype  long
 extern int WI_NOBLOCKSOCK(socktype sock);
 
 extern u_long cticks;
 #define TPS 10
 #define TH_SLEEP( ticks ) Sleep(ticks)
-
-#endif  /* BUSTER or not */
 
 #ifdef errno
 #undef errno
@@ -173,10 +160,8 @@ void wi_free_file_slot(struct wi_file_s * oldfile);
 
 #endif
 
-#ifndef BUSTER
 #include <memory.h>
 #define MEMCPY(dest,src,size)    memcpy(dest,src,size)
-#endif
 
 /*********** File system mapping ***************/
 
@@ -184,17 +169,20 @@ void wi_free_file_slot(struct wi_file_s * oldfile);
 
 /*********** debug support **************/
 
-#ifndef BUSTER
 extern   void     ws_dtrap();
 #define  dtrap()  ws_dtrap()
-#define  dprintf  printf
+
+#ifdef WI_USE_DPRINTF
+#define dprintf printf
+#else
+#define dprintf(...)
+#endif
 
 #include <stdarg.h>
 
 #ifndef USE_ARG
 #define USE_ARG(c) (c=c)
 #endif  /* USE_ARG */
-#endif  /* BUSTER */
 
 void panic(char * msg);
 

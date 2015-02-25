@@ -28,6 +28,9 @@ DEFS+=-DWI_USE_EMBFILES
 # Drive webio with a thread rather than polling
 DEFS+=-DWI_USE_THREADS
 
+# Debug messages
+DEFS+=-DWI_USE_DPRINTF
+
 # Use dynamic memory from the Heap
 #DEFS+=-DWI_USE_MALLOC
 

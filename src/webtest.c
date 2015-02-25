@@ -51,7 +51,7 @@ char * usage = "only valid command line arg is a TCP port number for listening\n
 int main( int argc, char * argv[] ) {
    int error;
 
-   printf("Webio server starting...\n");
+   dprintf("Webio server starting...\n");
 
 #ifdef _WINSOCKAPI_
    {
@@ -60,7 +60,7 @@ int main( int argc, char * argv[] ) {
       if (error)
       {
          dprintf("windsuck startup error %d\n", error);
-         exit(1);
+         exit(EXIT_FAILURE);
       }
    }
 #endif
@@ -70,7 +70,7 @@ int main( int argc, char * argv[] ) {
 		if (httpport < 1) {
 			dprintf("%s", usage);
 			dtrap();
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
    }
 
@@ -82,7 +82,7 @@ int main( int argc, char * argv[] ) {
 	      dprintf("socket error %d\n", errno);
 	  }
 	  dtrap();
-      exit(1);
+      exit(EXIT_FAILURE);
    }
 
    /* Install our port-local authentication routine */
@@ -92,10 +92,10 @@ int main( int argc, char * argv[] ) {
    error = wi_thread();   /* blocks here until killed */
    if (error < 0) {
       dprintf("wi_init error %d\n", error);
-      exit(1);
+      exit(EXIT_FAILURE);
    }
 
-   return 0;
+   return EXIT_SUCCESS;
 }
 
 
@@ -121,13 +121,13 @@ int wfs_auth(void * fd, char * name, char * password) {
 
 
 void ws_dtrap(void) {
-   printf("dtrap - need breakpoint");
+   dprintf("dtrap - need breakpoint");
 }
 
 void panic(char * msg) {
-   printf("panic: %s", msg);
+   dprintf("panic: %s", msg);
    dtrap();
-   exit(1);
+   exit(EXIT_FAILURE);
 }
 
 /* memory_ssi()
@@ -172,13 +172,15 @@ int wi_cvariables(wi_sess * sess, int token){
 char * testaction_cgi(wi_sess * sess,  EOFILE * eofile) {
    char *   your_name;
    your_name = wi_formvalue(sess, "your_name");   /* default: John */
-   fprintf(stderr, "testaction.cgi: your_name=%s\n", your_name);
+   (void)your_name;
 
-    if ( wi_redirect(sess, "index.html") ) {
-    	return("redir failed");
-    } else {
-    	return NULL;
-    }
+   dprintf("testaction.cgi: your_name=%s\n", your_name);
+
+   if ( wi_redirect(sess, "index.html") ) {
+	   	return("redir failed");
+   } else {
+	   	return NULL;
+   }
 }
 
 /* PUSH
