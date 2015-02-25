@@ -20,13 +20,18 @@ LIBS=
 INCS=-Isrc -Idata
 
 # Use system "fopen" files
-DEFS+=-DWI_STDFILES
+DEFS+=-DWI_USE_STDFILES
 
 # Use embedded FS
-DEFS+=-DWI_EMBFILES
+DEFS+=-DWI_USE_EMBFILES
 
 # Drive webio with a thread rather than polling
-DEFS+=-DWI_THREAD
+DEFS+=-DWI_USE_THREADS
+
+# Use dynamic memory from the Heap
+#DEFS+=-DWI_USE_MALLOC
+
+DEFS += -DMAX_TXBUF_SLOTS=4 -DMAX_SESS_SLOTS=4 -DMAX_EOFILE_SLOTS=16 -DMAX_FILE_SLOTS=16 -DMAX_FORM_SLOTS=4 -DMAX_FORM_PARAMS=16  
 
 webio: $(OBJS)
 	g++ $(LDFLAGS) $+ -o $@ $(LIBS)

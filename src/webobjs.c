@@ -51,6 +51,8 @@ u_long   wi_totalblocks = 0;
  * can find the back marker.
  */
 
+#ifdef WI_USE_MALLOC
+
 int   wi_marker = 0x4D454D4D;    /* MEMM */
 
 struct memmarker {
@@ -111,13 +113,50 @@ void wi_free(void * buff) {
    WI_FREE( (void*)mark );
 }
 
+#endif
 
 /* txbuf constructor */
+
+#ifndef WI_USE_MALLOC
+static txbuf wi_txbuf_slot[MAX_TXBUF_SLOTS];
+static u_char wi_txbuf_slot_used[MAX_TXBUF_SLOTS];
+
+txbuf * wi_get_txbuf_slot(void) {
+	int i;
+	txbuf * newtxbuf = NULL;
+	for (i = 0; i < MAX_TXBUF_SLOTS; ++i) {
+		if (wi_txbuf_slot_used[i] == 0) {
+			wi_txbuf_slot_used[i] = 1;
+			newtxbuf = &wi_txbuf_slot[i];
+			memset(newtxbuf,0,sizeof(txbuf));
+			//dprintf("Acq TxBuf[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+	return newtxbuf;
+}
+
+void wi_free_txbuf_slot(txbuf * oldtxbuf) {
+	int i;
+	for (i = 0; i < MAX_TXBUF_SLOTS; ++i) {
+		if ((oldtxbuf == &wi_txbuf_slot[i]) && (wi_txbuf_slot_used[i] != 0)) {
+			wi_txbuf_slot_used[i] = 0;
+			//dprintf("Free TxBuf[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+}
+#endif
 
 txbuf * wi_txalloc(wi_sess * websess) {
    txbuf * newtx;
 
+#ifdef WI_USE_MALLOC
    newtx = (txbuf*)wi_alloc( sizeof(txbuf) );
+#else
+   newtx = wi_get_txbuf_slot();
+#endif
+
    if (!newtx) {
 	   return NULL;
    }
@@ -162,17 +201,88 @@ void wi_txfree(txbuf * oldtx) {
       }
    }
 
+#ifdef WI_USE_MALLOC
    wi_free(oldtx);
+#else
+   wi_free_txbuf_slot(oldtx);
+#endif
    return;
 }
 
 
 /* wi_sess constructor */
 
+#ifndef WI_USE_MALLOC
+static wi_sess wi_sess_slot[MAX_SESS_SLOTS];
+static u_char wi_sess_slot_used[MAX_SESS_SLOTS];
+
+wi_sess * wi_get_sess_slot(void) {
+	int i;
+	wi_sess * newsess = NULL;
+	for (i = 0; i < MAX_SESS_SLOTS; ++i) {
+		if (wi_sess_slot_used[i] == 0) {
+			wi_sess_slot_used[i] = 1;
+			newsess = &wi_sess_slot[i];
+			memset(newsess,0,sizeof(wi_sess));
+			//dprintf("Acq Sess[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+	return newsess;
+}
+
+void wi_free_sess_slot(wi_sess * oldsess) {
+	int i;
+	for (i = 0; i < MAX_SESS_SLOTS; ++i) {
+		if ((oldsess == &wi_sess_slot[i]) && (wi_sess_slot_used[i] != 0)) {
+			wi_sess_slot_used[i] = 0;
+			//dprintf("Free Sess[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+}
+#endif
+
+#ifndef WI_USE_MALLOC
+static wi_form wi_form_slot[MAX_FORM_SLOTS];
+static u_char wi_form_slot_used[MAX_FORM_SLOTS];
+
+wi_form * wi_get_form_slot(void) {
+	int i;
+	wi_form * newform = NULL;
+	for (i = 0; i < MAX_FORM_SLOTS; ++i) {
+		if (wi_form_slot_used[i] == 0) {
+			wi_form_slot_used[i] = 1;
+			newform = &wi_form_slot[i];
+			memset(newform,0,sizeof(wi_form));
+			//dprintf("Acq Form[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+	return newform;
+}
+
+void wi_free_form_slot(wi_form * oldform) {
+	int i;
+	for (i = 0; i < MAX_FORM_SLOTS; ++i) {
+		if ((oldform == &wi_form_slot[i]) && (wi_form_slot_used[i] != 0)) {
+			wi_form_slot_used[i] = 0;
+			//dprintf("Free Form[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+}
+#endif
+
 wi_sess * wi_newsess(void) {
    wi_sess * newsess;
 
+#ifdef WI_USE_MALLOC
    newsess = (wi_sess *)wi_alloc( sizeof(wi_sess) );
+#else
+   newsess = wi_get_sess_slot();
+#endif
+
    if (!newsess) {
       dprintf("wi_newsess: out of memory.\n");
       return NULL;
@@ -233,7 +343,11 @@ void wi_delsess(wi_sess * oldsess) {
        struct wi_form_s * nextform;
        while (oldsess->ws_formlist) {
            nextform = oldsess->ws_formlist->next;
-           wi_free( oldsess->ws_formlist);
+#ifdef WI_USE_MALLOC
+           wi_free(oldsess->ws_formlist);
+#else
+           wi_free_form_slot(oldsess->ws_formlist);
+#endif
            if (nextform) {
                dtrap(); // check double-form first time through...
            }
@@ -242,16 +356,57 @@ void wi_delsess(wi_sess * oldsess) {
    }  
    /*     PB     09/11/2009 18.39.29 */
 
-   wi_free(oldsess);    /* free the actual memory */
+#ifdef WI_USE_MALLOC
+   wi_free(oldsess);
+#else
+   wi_free_sess_slot(oldsess);
+#endif
+
    return;
 }
 
 /* wi_file constructor */
 
+#ifndef WI_USE_MALLOC
+static wi_file wi_file_slot[MAX_FILE_SLOTS];
+static u_char wi_file_slot_used[MAX_FILE_SLOTS];
+
+wi_file * wi_get_file_slot(void) {
+	int i;
+	wi_file * newfile = NULL;
+	for (i = 0; i < MAX_FILE_SLOTS; ++i) {
+		if (wi_file_slot_used[i] == 0) {
+			wi_file_slot_used[i] = 1;
+			newfile = &wi_file_slot[i];
+			memset(newfile,0,sizeof(wi_file));
+			//dprintf("Acq File[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+	return newfile;
+}
+
+void wi_free_file_slot(wi_file * oldfile) {
+	int i;
+	for (i = 0; i < MAX_FILE_SLOTS; ++i) {
+		if ((oldfile == &wi_file_slot[i]) && (wi_file_slot_used[i] != 0)) {
+			wi_file_slot_used[i] = 0;
+			//dprintf("Free File[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+}
+#endif
+
 wi_file * wi_newfile(wi_filesys * fsys, wi_sess * sess, void * fd) {
    wi_file *      newfile;
 
+#ifdef WI_USE_MALLOC
    newfile = (wi_file *)wi_alloc( sizeof(wi_file));
+#else
+   newfile = wi_get_file_slot();
+#endif
+
    if (!newfile) {
 	   return NULL;
    }
@@ -290,7 +445,12 @@ int wi_delfile(wi_file * delfile) {
       last = tmpfi;
    }
 
+#ifdef WI_USE_MALLOC
    wi_free(delfile);
+#else
+   wi_free_file_slot(delfile);
+#endif
+
    return 0;
 }
 

@@ -49,7 +49,10 @@ typedef unsigned long u_long;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+
+#ifdef WI_USE_MALLOC
 #include <malloc.h>
+#endif
 
 #define WI_NOBLOCKSOCK(socket) fcntl(socket, F_SETFL, O_NONBLOCK)
 
@@ -64,8 +67,6 @@ typedef unsigned long u_long;
 int strnicmp(char * s1, char * s2, int length);
 #endif
 
-//extern void * malloc(int size);
-
 #ifdef LINUX_DEMO
 
 extern u_long cticks;
@@ -76,7 +77,7 @@ extern u_long cticks;
 
 #endif
 
-#else /*not LINUX  */
+#else /* not LINUX  */
 
 /* Windows (winsock) version */
 
@@ -146,9 +147,31 @@ extern u_long cticks;
 
 /*********** Macros to system code ***************/
 
+#ifdef WI_USE_MALLOC
+
 /* Map Webio heap routine to system's */
 #define WI_MALLOC(size)     malloc(size)
 #define WI_FREE(size)       free(size)
+
+#else
+
+struct txbuf_s;
+struct txbuf_s * wi_get_txbuf_slot(void);
+void wi_free_txbuf_slot(struct txbuf_s * oldtxbuf);
+
+struct wi_sess_s;
+struct wi_sess_s * wi_get_sess_slot(void);
+void wi_free_sess_slot(struct wi_sess_s * oldsess);
+
+struct wi_form_s;
+struct wi_form_s * wi_get_form_slot(void);
+void wi_free_form_slot(struct wi_form_s * oldform);
+
+struct wi_file_s;
+struct wi_file_s * wi_get_file_slot(void);
+void wi_free_file_slot(struct wi_file_s * oldfile);
+
+#endif
 
 #ifndef BUSTER
 #include <memory.h>

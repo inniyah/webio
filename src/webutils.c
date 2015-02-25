@@ -434,10 +434,24 @@ int wi_buildform(wi_sess * sess, char * pairs) {
       }
    }
 
+#ifdef MAX_FORM_PARAMS
+   if (pairct > MAX_FORM_PARAMS) {
+	   pairct = MAX_FORM_PARAMS;
+   }
+#endif
+
    /* get a buffer big enough for the form, including all the 
     * name/value pair pointers. 
     */
-   form = (wi_form*)wi_alloc( sizeof(wi_form) + (pairct * sizeof(wi_pair)));
+
+#if defined(WI_USE_MALLOC) && !defined(MAX_FORM_PARAMS)
+   form = (wi_form*)wi_alloc( sizeof(wi_form) + ((pairct-1) * sizeof(wi_pair)));
+#elif defined(WI_USE_MALLOC) && defined(MAX_FORM_PARAMS)
+   form = (wi_form*)wi_alloc( sizeof(wi_form) );
+#else
+   form = wi_get_form_slot();
+#endif
+
    if (!form) {
 	   return WI_E_MEMORY;
    }
@@ -549,7 +563,7 @@ int wi_ssi(wi_sess * sess) {
    wi_file *   wrapper;       /* info about containing file */
    int         error;
    char        paren;
-#ifdef WI_EMBFILES
+#ifdef WI_USE_EMBFILES
    wi_file *   ssi;           /* info about SSI file */
 #endif
 
@@ -588,7 +602,7 @@ int wi_ssi(wi_sess * sess) {
       return error;
    }
 
-#ifdef WI_EMBFILES
+#ifdef WI_USE_EMBFILES
    /* See if the SSI file is a code-based embedded file */
    ssi = sess->ws_filelist;
    if (ssi->wf_routines == &emfs) {
@@ -612,14 +626,18 @@ int wi_ssi(wi_sess * sess) {
 
       /* If we layered on a form, release it now */
       if (pairs && (sess->ws_formlist->next)) {
+#ifdef WI_USE_MALLOC
          wi_free(sess->ws_formlist);
+#else
+         wi_free_form_slot(sess->ws_formlist);
+#endif
          sess->ws_formlist = sess->ws_formlist->next;
       }
 
       wi_fclose(ssi);
       return 0;
    }
-#endif /* WI_EMBFILES */
+#endif /* WI_USE_EMBFILES */
 
    error = wi_readfile(sess);
    return error;

@@ -33,7 +33,7 @@
  * the call.
  */
 
-#ifdef WI_STDFILES
+#ifdef WI_USE_STDFILES
 /* Voiding these pointers is ugly, but so are the Linux declarations. */
 wi_filesys sysfs = {
    (void*)fopen,
@@ -43,9 +43,9 @@ wi_filesys sysfs = {
    (void*)fseek,
    (void*)ftell,
 };
-#endif   /* WI_STDFILES */
+#endif   /* WI_USE_STDFILES */
 
-#ifdef WI_EMBFILES
+#ifdef WI_USE_EMBFILES
 wi_filesys emfs = {
    em_fopen,
    em_fread,
@@ -54,15 +54,14 @@ wi_filesys emfs = {
    em_fseek,
    em_ftell
 };
-#endif   /* WI_EMBFILES */
+#endif   /* WI_USE_EMBFILES */
 
 /* Table ofthe supported file systems */
-wi_filesys * wi_filesystems[] =    /* list of file systems */
-{
-#ifdef WI_EMBFILES
+wi_filesys * wi_filesystems[] = { /* list of file systems */
+#ifdef WI_USE_EMBFILES
    &emfs,
 #endif
-#ifdef WI_STDFILES
+#ifdef WI_USE_STDFILES
    &sysfs,
 #endif
    NULL     /* reserved for runtime entry */
@@ -148,7 +147,7 @@ int wi_ftell(WI_FILE * fd) {
 }
 
 /***************** Optional embedded FS starts here *****************/
-#ifdef WI_EMBFILES
+#ifdef WI_USE_EMBFILES
 
 #include "wsfdata.h"
 
@@ -204,6 +203,37 @@ wi_sess * em_lookupsess(void * fd) {
    return NULL;
 }
 
+#ifndef WI_USE_MALLOC
+static EOFILE wi_eofile_slot[MAX_EOFILE_SLOTS];
+static u_char wi_eofile_slot_used[MAX_EOFILE_SLOTS];
+
+EOFILE * wi_get_eofile_slot(void) {
+	int i;
+	EOFILE * newfile = NULL;
+	for (i = 0; i < MAX_EOFILE_SLOTS; ++i) {
+		if (wi_eofile_slot_used[i] == 0) {
+			wi_eofile_slot_used[i] = 1;
+			newfile = &wi_eofile_slot[i];
+			memset(newfile,0,sizeof(EOFILE));
+			//dprintf("Acq EOFILE[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+	return newfile;
+}
+
+void wi_free_eofile_slot(EOFILE * oldfile) {
+	int i;
+	for (i = 0; i < MAX_EOFILE_SLOTS; ++i) {
+		if ((oldfile == &wi_eofile_slot[i]) && (wi_eofile_slot_used[i] != 0)) {
+			wi_eofile_slot_used[i] = 0;
+			//dprintf("Free EOFILE[%u]\n", (unsigned int)i);
+			break;
+		}
+	}
+}
+#endif
+
 WI_FILE * em_fopen(char * name, char * mode) {
    em_file *   emf;
    EOFILE *    eofile;
@@ -228,7 +258,13 @@ WI_FILE * em_fopen(char * name, char * mode) {
    }
 
    /* We're going to open file. Allocate the transient control structure */
+
+#ifdef WI_USE_MALLOC
    eofile = (EOFILE *)wi_alloc(sizeof(EOFILE));
+#else
+   eofile = wi_get_eofile_slot();
+#endif
+
    if (!eofile) {
 	   return NULL;
    }
@@ -320,7 +356,12 @@ int em_fclose(void * voidfd) {
       return WI_E_BADFILE;
    }
 
+#ifdef WI_USE_MALLOC
    wi_free(passedfd);
+#else
+   wi_free_eofile_slot(passedfd);
+#endif
+
    return 0;
 }
 
@@ -396,4 +437,4 @@ int em_push(void * fd, wi_sess * sess) {
    return error;
 }
 
-#endif  /* WI_EMBFILES */
+#endif  /* WI_USE_EMBFILES */

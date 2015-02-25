@@ -107,7 +107,11 @@ typedef struct wi_pair_s {
 typedef struct wi_form_s {
    struct wi_form_s * next;
    int      paircount;
+#ifdef MAX_FORM_PARAMS
+   wi_pair  pairs[MAX_FORM_PARAMS];
+#else
    wi_pair  pairs[1];   /* Size actually will be paircount */
+#endif
 } wi_form;
 
 extern   wi_sess * wi_sessions;
@@ -171,8 +175,10 @@ extern   char * wi_servername;
 extern   int         wi_init(void);
 extern   int         wi_poll(void);
 
+#ifdef WI_USE_MALLOC
 extern   char *      wi_alloc(int bufsize);
 extern   void        wi_free(void *);
+#endif
 
 extern   txbuf *     wi_txalloc( wi_sess *);
 extern   void        wi_txfree( txbuf *);

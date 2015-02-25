@@ -172,7 +172,7 @@ int wi_cvariables(wi_sess * sess, int token){
 char * testaction_cgi(wi_sess * sess,  EOFILE * eofile) {
    char *   your_name;
    your_name = wi_formvalue(sess, "your_name");   /* default: John */
-   (void)your_name;
+   fprintf(stderr, "testaction.cgi: your_name=%s\n", your_name);
 
     if ( wi_redirect(sess, "index.html") ) {
     	return("redir failed");

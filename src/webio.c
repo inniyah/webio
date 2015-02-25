@@ -52,7 +52,7 @@ char * wi_rootfile = "index.html";  /* File name to substitute for "/" */
 /* Flag to permit connections by the localhost only (security). */
 int   wi_localhost;
 
-#ifdef WI_THREAD
+#ifdef WI_USE_THREADS
 struct timeval   wi_seltmo = {5,0}; /* on thread, short block is OK */
 #else
 struct timeval   wi_seltmo = {0,0}; /* polled mode - no blocking */
@@ -302,7 +302,7 @@ another_state:
    return sessions;
 }
 
-#ifdef WI_THREAD
+#ifdef WI_USE_THREADS
 
 /* wi_thread() - entry point for driving webio from a single thread.  It
  * is essentially an infinite loop which drives wi_poll.
@@ -336,7 +336,7 @@ int wi_thread() {
    return sessions;
 }
 
-#endif  /* WI_THREAD */
+#endif  /* WI_USE_THREADS */
 
 
 int wi_sockaccept() {
