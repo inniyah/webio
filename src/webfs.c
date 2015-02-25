@@ -149,7 +149,7 @@ int wi_ftell(WI_FILE * fd) {
 /***************** Optional embedded FS starts here *****************/
 #ifdef WI_USE_EMBFILES
 
-#include "wsfdata.h"
+extern em_file efslist[];
 
 /* Set up master list of embedded files. If "efslist[]" is an unresolved 
  * external when you link then you have neglected to provide the data 

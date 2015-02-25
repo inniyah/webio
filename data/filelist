@@ -7,14 +7,10 @@ prlogo.gif   -o imgdata.c
 memory.ssi   -s memory_ssi
 
 # C-code expressions mapped to files
-memhits.var -e u_long  wi_totalblocks
+memhits.var -e u_long wi_totalblocks
 
 # Server push files
 pushtest.htm -p pushtest_func
 
 # form handlers
 testaction.cgi -f testaction_cgi
-
-
-
-

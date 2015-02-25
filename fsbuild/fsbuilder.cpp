@@ -1320,9 +1320,10 @@ int main(int argc, char * argv[]) {
          }
          fprintf(outcode, "%s\n      break;\n", newfile->ccode);
 
-         fprintf(outheader, "#define  %-32s %u\n",
-            maketoken(newfile->filename, newfile->filenumber, UPPERCASE),
-            newfile->filenumber );
+         fprintf(outheader, "#define %s %u\n",
+                 maketoken(newfile->filename, newfile->filenumber, UPPERCASE),
+                 newfile->filenumber
+         );
       }
       fprintf(outcode, "   default:\n      e = WI_E_BADPARM;\n      break;\n");
       fprintf(outcode, "   }\n   return e;\n}\n\n");
