@@ -69,7 +69,7 @@ int strnicmp(char * s1, char * s2, int length);
 
 #ifdef LINUX_DEMO
 
-extern u_long cticks;
+extern u_long wi_cticks;
 #define TPS	10		// ticks per second
 
 
@@ -93,7 +93,7 @@ extern u_long cticks;
 #define socktype  long
 extern int WI_NOBLOCKSOCK(socktype sock);
 
-extern u_long cticks;
+extern u_long wi_cticks;
 #define TPS 10
 #define TH_SLEEP( ticks ) Sleep(ticks)
 
@@ -169,8 +169,8 @@ void wi_free_file_slot(struct wi_file_s * oldfile);
 
 /*********** debug support **************/
 
-extern   void     ws_dtrap();
-#define  dtrap()  ws_dtrap()
+extern   void     wi_dtrap();
+#define  dtrap()  wi_dtrap()
 
 #ifdef WI_USE_DPRINTF
 #define dprintf printf
@@ -184,7 +184,7 @@ extern   void     ws_dtrap();
 #define USE_ARG(c) (c=c)
 #endif  /* USE_ARG */
 
-void panic(char * msg);
+void wi_panic(char * msg);
 
 
 #endif   /* _WEBSYS_H_ */

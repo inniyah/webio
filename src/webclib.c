@@ -58,7 +58,7 @@ void wi_printf(wi_sess * sess, char * fmt, ...) {
    len = strlen(output);
    if ((output[DDB_SIZE-1] != 0) || len >= sizeof(output)) {
       dprintf("wi_printf: overflow, output: %s\n", output);
-      panic("wi_printf");
+      wi_panic("wi_printf");
    }
 
    /* Print warnings if we even came close. */

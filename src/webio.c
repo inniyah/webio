@@ -193,7 +193,7 @@ another_state:
                return WI_E_SOCKET;
             }
             sess->ws_rxsize += error;
-            sess->ws_last = cticks;
+            sess->ws_last = wi_cticks;
          }
          if (sess->ws_rxsize) { /* unprocessed input http */
             error = wi_parseheader( sess );  /* Make a best effort to process input */
@@ -224,7 +224,7 @@ another_state:
             }
          }
          sess->ws_rxsize += error;
-         sess->ws_last = cticks;
+         sess->ws_last = wi_cticks;
 
          /* If we have all the content, parse the name/value pairs. 
           * We check for ContentLength field or socket closed 
@@ -242,7 +242,7 @@ another_state:
                   break;
                }
                sess->ws_state = WI_CONTENT;
-               sess->ws_last = cticks;
+               sess->ws_last = wi_cticks;
             }
          }
          if (sess->ws_state != WI_POSTRX)
@@ -290,7 +290,7 @@ another_state:
          break;
       }
       /* kill sessions with no recent activity */
-      if ((u_long)(sess->ws_last + (15 * TPS)) < cticks) {
+      if ((u_long)(sess->ws_last + (15 * TPS)) < wi_cticks) {
          dtrap();
          dprintf("killing stuck webio session\n");
          wi_delsess(sess);
@@ -381,7 +381,7 @@ int wi_sockaccept() {
    error = WI_NOBLOCKSOCK(newsock);
    if (error) {
       dtrap();
-      panic("blocking socket");
+      wi_panic("blocking socket");
    }
 
    /* now that we have a new socket connection, make a session 
@@ -689,7 +689,7 @@ readmore:
       }
    }
 
-   sess->ws_last = cticks;
+   sess->ws_last = wi_cticks;
    fi->wf_inbuf += len;
 
    /* fast path for binary files. We've read first buffer from file
@@ -805,7 +805,7 @@ int wi_sockwrite(wi_sess * sess) {
       sess->ws_txbufs = txbuf->tb_next;
       txbuf->tb_next = NULL;
       wi_txfree(txbuf);
-      sess->ws_last = cticks;
+      sess->ws_last = wi_cticks;
    }
 
    /* fall to here when all txbufs are sent. */
@@ -829,7 +829,7 @@ int wi_redirect(wi_sess * sess, char * filename) {
 
    sess->ws_referer = sess->ws_uri;
    sess->ws_uri = filename;
-   sess->ws_last = cticks;
+   sess->ws_last = wi_cticks;
 
    /* unlink the completed form file fron the session */
    sess->ws_filelist = sess->ws_filelist->wf_next;
@@ -854,7 +854,7 @@ int wi_redirect(wi_sess * sess, char * filename) {
 
    sess->ws_state = WI_CONTENT;
    sess->ws_cmd = H_GET;
-//   sess->ws_last = cticks;
+//   sess->ws_last = wi_cticks;
    sess->ws_flags &= ~WF_HEADERSENT;
 
    return 0;   /* OK return */

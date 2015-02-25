@@ -153,9 +153,9 @@ extern em_file efslist[];
 
 /* Set up master list of embedded files. If "efslist[]" is an unresolved 
  * external when you link then you have neglected to provide the data 
- * for the embedded files. The normal way ofdoing this is to use the 
+ * for the embedded files. The normal way of doing this is to use the
  * HTML compiler to produce one or more C files containing the data.
- * this porcess will define and generate ef_list[] for you. 
+ * this process will define and generate efslist[] for you.
  */
 em_file * emfiles = &efslist[0];
 
@@ -392,7 +392,7 @@ int em_fseek(void * fd, long offset, int mode) {
       newpos = emf->eo_position + offset;
       break;
    default:
-      panic("em_fseek");
+      wi_panic("em_fseek");
       newpos = 0;
       break;
    }

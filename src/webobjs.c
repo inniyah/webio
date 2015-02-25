@@ -100,12 +100,12 @@ void wi_free(void * buff) {
 
    /* check for corruption of pre-buffer area */
    if (mark->marker != wi_marker)
-      panic("wi_free: pre");
+      wi_panic("wi_free: pre");
    
    /* check for corruption of post-buffer area */
    cp = (char*)buff;
    if ( *(int*)(cp + mark->msize) != wi_marker)
-      panic("wi_free: post");
+      wi_panic("wi_free: post");
    
    wi_blocks--;
    wi_bytes -= mark->msize;
@@ -289,7 +289,7 @@ wi_sess * wi_newsess(void) {
    }
    newsess->ws_socket = INVALID_SOCKET;
    newsess->ws_state = WI_HEADER;
-   newsess->ws_last = cticks;
+   newsess->ws_last = wi_cticks;
 
    /* Add new session to master list */
    newsess->ws_next = wi_sessions;

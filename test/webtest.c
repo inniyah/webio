@@ -44,7 +44,7 @@ static char test_name[32] = {"john"};
 static char test_passwd[32] = {"bartas"};
 int   wfs_auth(void * fd, char * name, char * password);
 
-u_long cticks = 0;
+u_long wi_cticks = 0;
 
 char * usage = "only valid command line arg is a TCP port number for listening\n";
 
@@ -120,12 +120,12 @@ int wfs_auth(void * fd, char * name, char * password) {
 }
 
 
-void ws_dtrap(void) {
+void wi_dtrap(void) {
    dprintf("dtrap - need breakpoint");
 }
 
-void panic(char * msg) {
-   dprintf("panic: %s", msg);
+void wi_panic(char * msg) {
+   dprintf("wi_panic: %s", msg);
    dtrap();
    exit(EXIT_FAILURE);
 }

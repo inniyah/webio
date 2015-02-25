@@ -1,6 +1,10 @@
 all: fsbuilder webio
 
-INCUDES = webfs.h  webio.h  websys.h
+LIB_NAME=webio
+LIB_MAJOR=0
+LIB_MINOR=1
+
+LIBRARY=lib$(LIB_NAME)
 
 LIB_OBJS = \
 	obj/webclib.o \
@@ -16,7 +20,8 @@ TEST_OBJS = \
 	obj/webtest.o
 
 CFLAGS= -O2 -g -Wall
-LDFLAGS= -Wl,-z,defs -Wl,--as-needed -Wl,--no-undefined
+LDFLAGS=
+#LDFLAGS= -Wl,-z,defs -Wl,--as-needed -Wl,--no-undefined
 DEFS=-DLINUX -DLINUX_DEMO
 LIBS=
 INCS=-Isrc -Idata
@@ -39,11 +44,49 @@ DEFS+=-DWI_USE_MALLOC
 # Configuration parameters when no heap memory is used
 #DEFS += -DMAX_TXBUF_SLOTS=4 -DMAX_SESS_SLOTS=4 -DMAX_EOFILE_SLOTS=16 -DMAX_FILE_SLOTS=16 -DMAX_FORM_SLOTS=4 -DMAX_FORM_PARAMS=16  
 
+
+
+SHARED_LIB_OBJS = $(LIB_OBJS:.o=.shared.o)
+STATIC_LIB_OBJS = $(LIB_OBJS:.o=.static.o)
+
+$(LIBRARY).so.$(LIB_MAJOR).$(LIB_MINOR): $(SHARED_LIB_OBJS)
+	g++ $(LDFLAGS) $(EXTRA_LDFLAGS) -shared \
+		-Wl,-soname,$(LIBRARY).so.$(LIB_MAJOR) \
+		-o $(LIBRARY).so.$(LIB_MAJOR).$(LIB_MINOR) \
+		$+ -o $@ $(LIBS)
+
+$(LIBRARY).so: $(LIBRARY).so.$(LIB_MAJOR).$(LIB_MINOR)
+	rm -f $@.$(LIB_MAJOR)
+	ln -s $@.$(LIB_MAJOR).$(LIB_MINOR) $@.$(LIB_MAJOR)
+	rm -f $@
+	ln -s $@.$(LIB_MAJOR) $@
+
+$(LIBRARY).a: $(STATIC_LIB_OBJS)
+	ar cru $@ $+
+
+obj/%.shared.o: src/%.cpp
+	g++ -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS) -fPIC
+
+obj/%.shared.o: src/%.c
+	gcc -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS) -fPIC
+
+obj/%.static.o: src/%.cpp
+	g++ -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS)
+
+obj/%.static.o: src/%.c
+	gcc -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS)
+
+
+
 webio: $(LIB_OBJS) $(TEST_OBJS)
 	g++ $(LDFLAGS) $+ -o $@ $(LIBS)
 
+
+
 fsbuilder: fsbuild/fsbuilder.o
 	g++ $(LDFLAGS) $+ -o $@ $(LIBS)
+
+
 
 data/imgdata.o: data/imgdata.c
 	gcc -o $@ -c $(DEFS) $(INCS) $+ $(CFLAGS)
@@ -86,4 +129,4 @@ clean:
 	rm -f $(LIB_OBJS) $(TEST_OBJS)
 	rm -f webio fsbuilder
 	rm -f data/imgdata.c data/htmldata.c data/wsfcode.c data/wsfdata.h
-	rm -f *.o */*.o *.a */*.a *~
+	rm -f *.o */*.o *.a */*.a *.so *.so.* *~
