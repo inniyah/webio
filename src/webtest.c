@@ -48,9 +48,7 @@ u_long cticks = 0;
 
 char * usage = "only valid command line arg is a TCP port number for listening\n";
 
-int
-main( int argc, char * argv[] )
-{
+int main( int argc, char * argv[] ) {
    int error;
 
    printf("Webio server starting...\n");
@@ -59,7 +57,7 @@ main( int argc, char * argv[] )
    {
       WSADATA wsaData;
       error = WSAStartup(MAKEWORD(2,2), &wsaData);
-      if(error)
+      if (error)
       {
          dprintf("windsuck startup error %d\n", error);
          exit(1);
@@ -67,11 +65,9 @@ main( int argc, char * argv[] )
    }
 #endif
 
-   if(argc > 1)
-   {
+   if (argc > 1) {
 	    httpport = atoi(argv[1]);
-		if(httpport < 1)
-		{
+		if (httpport < 1) {
 			dprintf("%s", usage);
 			dtrap();
 			exit(1);
@@ -80,11 +76,9 @@ main( int argc, char * argv[] )
 
 
    error = wi_init();
-   if(error < 0)
-   {
+   if (error < 0) {
       dprintf("wi_init error %d\n", error);
-	  if(error == WIE_SOCKET)
-	  {
+	  if (error == WI_E_SOCKET) {
 	      dprintf("socket error %d\n", errno);
 	  }
 	  dtrap();
@@ -96,8 +90,7 @@ main( int argc, char * argv[] )
 
 
    error = wi_thread();   /* blocks here until killed */
-   if(error < 0)
-   {
+   if (error < 0) {
       dprintf("wi_init error %d\n", error);
       exit(1);
    }
@@ -108,9 +101,7 @@ main( int argc, char * argv[] )
 
 /* Return true if user gets access to the embedded file, 0 if not. */
 
-int
-wfs_auth(void * fd, char * name, char * password)
-{
+int wfs_auth(void * fd, char * name, char * password) {
 
    /* See if this file requires authentication. */
    EOFILE *    eofile;
@@ -119,26 +110,21 @@ wfs_auth(void * fd, char * name, char * password)
    eofile = (EOFILE *)fd;
    emf = eofile->eo_emfile;
 
-   if(emf->em_flags & EMF_AUTH)
-   {
-      if(stricmp(name, test_name))
+   if (emf->em_flags & EMF_AUTH) {
+      if (stricmp(name, test_name))
          return 0;
-      if(stricmp(password, test_passwd))
+      if (stricmp(password, test_passwd))
          return 0;
    }
    return 1;
 }
 
 
-void
-ws_dtrap(void)
-{
+void ws_dtrap(void) {
    printf("dtrap - need breakpoint");
 }
 
-void
-panic(char * msg)
-{
+void panic(char * msg) {
    printf("panic: %s", msg);
    dtrap();
    exit(1);
@@ -156,29 +142,22 @@ extern u_long   wi_maxbytes;
 extern u_long   wi_totalblocks;
 
 
-int 
-memory_ssi(wi_sess * sess, EOFILE * eofile)
-{
+int memory_ssi(wi_sess * sess, EOFILE * eofile) {
    /* print memory stats to the session's TX buffers */
    wi_printf(sess, "Current blocks: %d <br>", wi_blocks );
    wi_printf(sess, "Current bytes: %d <br>", wi_bytes );
    wi_printf(sess, "Total blocks: %d <br>", wi_totalblocks );
    wi_printf(sess, "Max. bytes: %d <br>", wi_maxbytes );
-
    return 0;      /* OK return code */
 }
 
-
-int
-wi_cvariables(wi_sess * sess, int token)
-{
+int wi_cvariables(wi_sess * sess, int token){
    int e = 0;
 
-   switch(token)
-   {
+   switch(token) {
    case MEMHITS_VAR5:
-      e = wi_putlong(sess, (u_long)(wi_totalblocks));
-      break;
+		  e = wi_putlong(sess, (u_long)(wi_totalblocks));
+		  break;
    }
    return e;
 }
@@ -190,29 +169,24 @@ wi_cvariables(wi_sess * sess, int token)
  * Returns 0 if OK,else negative error code
  */
 
-char *
-testaction_cgi(wi_sess * sess,  EOFILE * eofile)
-{
+char * testaction_cgi(wi_sess * sess,  EOFILE * eofile) {
    char *   your_name;
-
    your_name = wi_formvalue(sess, "your_name");   /* default: John */
    (void)your_name;
 
-    if( wi_redirect(sess, "index.html") )
-        return("redir failed");
-    else
-        return NULL;
+    if ( wi_redirect(sess, "index.html") ) {
+    	return("redir failed");
+    } else {
+    	return NULL;
+    }
 }
-
 
 /* PUSH
  *
  * pushtest_func routine stub
  */
 
-int
-pushtest_func(wi_sess * sess, EOFILE * eofile)
-{
+int pushtest_func(wi_sess * sess, EOFILE * eofile) {
    /* Add your code here */
    return 0;
 }

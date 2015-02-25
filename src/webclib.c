@@ -21,7 +21,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#include "websys.h"     /* port dependant system files */
+#include "websys.h"
 #include "webio.h"
 #include "webfs.h"
 
@@ -29,25 +29,22 @@
 #include <string.h>
 
 static char output[DDB_SIZE];
-int   ssi_threshhold = DDB_SIZE/2;
+int ssi_threshhold = DDB_SIZE/2;
 
 
-void
-wi_printf(wi_sess * sess, char * fmt, ...)
-{
+void wi_printf(wi_sess * sess, char * fmt, ...) {
    int   len;
    va_list a;
 
    /* Since it's a huge pain to check the connection after each CGI write,
     * we may get sometimes handed a dying connection. Ignore these. 
     */
-   if(sess->ws_state == WI_ENDING)
+   if (sess->ws_state == WI_ENDING)
       return;
 
    /* Try to make sure we won't overflow the print buffer */
    len = strlen(fmt);
-   if(len > sizeof(output)/2 )
-   {
+   if (len > sizeof(output)/2) {
       dtrap();
       dprintf("wi_printf: overflow, fmt: %s\n", fmt);
       return;
@@ -59,25 +56,22 @@ wi_printf(wi_sess * sess, char * fmt, ...)
 
    /* See if we overflowed the print buffer */
    len = strlen(output);
-   if((output[DDB_SIZE-1] != 0) || len >= sizeof(output))
-   {
+   if ((output[DDB_SIZE-1] != 0) || len >= sizeof(output)) {
       dprintf("wi_printf: overflow, output: %s\n", output);
       panic("wi_printf");
    }
 
    /* Print warnings if we even came close. */
-   if(len > sizeof(output)/2 )
-   {
+   if (len > sizeof(output)/2) {
       dtrap();
       dprintf("wi_printf warning: oversize line: %s", output);
    }
 
    /* see if new data will fit in existing buffer */
-   if((sess->ws_txtail == NULL) || 
-      (len >= (WI_TXBUFSIZE - sess->ws_txtail->tb_total)))
+   if ((sess->ws_txtail == NULL) || (len >= (WI_TXBUFSIZE - sess->ws_txtail->tb_total)))
    {
       /* won't fit, get another buffer */
-      if(wi_txalloc(sess) == NULL)
+      if (wi_txalloc(sess) == NULL)
          return;
    }
 
@@ -88,16 +82,12 @@ wi_printf(wi_sess * sess, char * fmt, ...)
 }
 
 
-int
-wi_putlong(wi_sess * sess, u_long value)
-{
+int wi_putlong(wi_sess * sess, u_long value) {
    wi_printf(sess, "%lu", value);
    return 0;
 }
 
-int
-wi_putstring(wi_sess * sess, char * string)
-{
+int wi_putstring(wi_sess * sess, char * string) {
    wi_printf(sess, "%s", string);
    return 0;
 }
@@ -110,35 +100,30 @@ wi_putstring(wi_sess * sess, char * string)
  * returns NULL if name is not found.
  */
 
-char *
-wi_formvalue( wi_sess * sess, char * ctlname )
-{
+char * wi_formvalue( wi_sess * sess, char * ctlname ) {
    int      i;
    int      namelen;
    struct wi_form_s * form;
 
    namelen = strlen(ctlname);
-   for(form = sess->ws_formlist; form; form = form->next)
-   {
-      for(i = 0; i < form->paircount; i++)
-         if( strnicmp(form->pairs[i].name, ctlname, namelen) == 0 )
-         {
-            if( (*form->pairs[i].value) == 0)
-               return NULL;
-            else
-               return form->pairs[i].value;
+   for (form = sess->ws_formlist; form; form = form->next) {
+      for (i = 0; i < form->paircount; i++) {
+         if ( strnicmp(form->pairs[i].name, ctlname, namelen) == 0 ) {
+            if ( (*form->pairs[i].value) == 0) {
+            	return NULL;
+            } else {
+            	return form->pairs[i].value;
+            }
          }
+      }
    }
-
    return NULL;
 }
 
 
 /* wi_checkip() - helper for wi_formipaddr() */
 
-char *
-wi_checkip(u_long * out, char * input)
-{
+char * wi_checkip(u_long * out, char * input) {
     int         octet;  /* Counter, 1-4 octets */
     unsigned    value;
     char *      cp;
@@ -150,34 +135,32 @@ wi_checkip(u_long * out, char * input)
     /* Note - try for 5 values; however finding more than 4 
      * is error. Correct loop exit if via "!cp".
      */
-    for(octet = 1; octet < 5; octet++)
-    {
+    for (octet = 1; octet < 5; octet++) {
         value = atoi(cp);
-        if((value == 0) && (*cp != '0'))
-            return ("All chars must be digits or dots");
-
-        if(value > 255)
-            return ("All values must be 0-255");
-
+        if ((value == 0) && (*cp != '0')) {
+        	return ("All chars must be digits or dots");
+        }
+        if (value > 255) {
+        	return ("All values must be 0-255");
+        }
         ipval = (ipval << 8) + value;
         cp = strchr(cp, '.');
-        if(!cp)
-            break;
+        if (!cp) {
+        	break;
+        }
         cp++;
     }
 
-    if((octet > 4) || (octet < 2))
-        return ("Must be 1 to 3 dots");
+    if ((octet > 4) || (octet < 2)) {
+    	return ("Must be 1 to 3 dots");
+    }
 
     /* If there are missing ocets (e.g. "10.1") then shift the high and low 
      * values to allow the traditional shorthand.
      */
-    if(octet == 2)
-    {
+    if (octet == 2) {
         ipval = (ipval & 0x000000FF) + ((ipval & 0x0000FF00) << 16);
-    }
-    else if(octet == 3)
-    {
+    } else if (octet == 3) {
         ipval = (ipval & 0x000000FF) + ((ipval & 0x00FFFF00) << 8);
     }
 
@@ -193,13 +176,12 @@ wi_checkip(u_long * out, char * input)
  * some text describng the problem.
  */
 
-char *
-wi_formipaddr( wi_sess * sess, char * ipname, u_long * ipaddr)
-{
+char * wi_formipaddr( wi_sess * sess, char * ipname, u_long * ipaddr) {
    char * iptext = wi_formvalue(sess, ipname );
 
-   if (!iptext)
-      return "unknown form control name";
+   if (!iptext) {
+	   return "unknown form control name";
+   }
 
    return (wi_checkip(ipaddr, iptext));
 }
@@ -212,44 +194,40 @@ wi_formipaddr( wi_sess * sess, char * ipname, u_long * ipaddr)
  * negative ENP_ error.
  */
 
-int
-wi_formint(wi_sess * sess, char * name, long * return_int )
-{
+int wi_formint(wi_sess * sess, char * name, long * return_int ) {
    char * valuetext;
 
    valuetext = wi_formvalue( sess, name );
-   if(valuetext == NULL)
-      return WIE_BADPARM;
+   if (valuetext == NULL) {
+	   return WI_E_BADPARM;
+   }
 
    *return_int = (long)atol(valuetext);
-   if( (*return_int == 0) && (*valuetext != '0'))
-      return WIE_BADPARM;
-   else
-      return 0;
+   if ( (*return_int == 0) && (*valuetext != '0')) {
+	   return WI_E_BADPARM;
+   } else {
+	   return 0;
+   }
 }
 
 
-int
-wi_formbool(wi_sess * sess, char * name)
-{
+int wi_formbool(wi_sess * sess, char * name) {
    char * valuetext;
 
    valuetext = wi_formvalue( sess, name );
-   if(valuetext == NULL)
-   {
+   if (valuetext == NULL) {
       return 0;   /* Default: FALSE */
    }
 
-   if( (((*valuetext) & 0x20) == 'y') ||      /* Yes */
-       (((*valuetext) & 0x20) == 't') ||      /* True */
-         (*valuetext == 'c') )                /* checked */
-   {
+   if ( (((*valuetext) & 0x20) == 'y') || /* Yes */
+        (((*valuetext) & 0x20) == 't') || /* True */
+        (*valuetext == 'c') /* Checked */
+   ) {
       return TRUE;
    }
-   if( stricmp(valuetext, "on") == 0)      /* on */
+   if (stricmp(valuetext, "on") == 0) { /* On */
       return TRUE;
+   }
 
    return FALSE;
 }
-
-

@@ -22,7 +22,7 @@
  *
  */
 
-#include "websys.h"     /* port dependant system files */
+#include "websys.h"
 #include "webio.h"
 
 /* This file contains the routines which change from OS to OS 
@@ -41,9 +41,7 @@ static char * month[] =
 };
 
 #ifdef _WINSOCKAPI_
-int 
-WI_NOBLOCKSOCK(long sock)
-{
+int WI_NOBLOCKSOCK(long sock) {
    int   err;
    int   option = TRUE;
 
@@ -57,9 +55,7 @@ static char datebuf[36];
 
 #include <time.h>
 
-char * 
-wi_getdate(wi_sess * sess)
-{
+char * wi_getdate(wi_sess * sess) {
    time_t      timeval;
    struct tm * gmt;
 
@@ -87,9 +83,7 @@ static char datebuf[36];
 
 #include <time.h>
 
-char * 
-wi_getdate(wi_sess * sess)
-{
+char * wi_getdate(wi_sess * sess) {
    time_t      timeval;
    struct tm * gmt;
 
@@ -109,15 +103,12 @@ wi_getdate(wi_sess * sess)
    return datebuf;
 }
 
-int
-strnicmp(char * s1, char * s2, int length)
-{
+int strnicmp(char * s1, char * s2, int length) {
     int i;
-    
-    for(i = 0; i < length; i++)
-    {
-        if(((*s1++) | 0x20) != ((*s2++) | 0x20)  )
-            return 1;
+    for (i = 0; i < length; i++) {
+        if (((*s1++) | 0x20) != ((*s2++) | 0x20)) {
+        	return 1;
+        }
     }
     return 0;
 }

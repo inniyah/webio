@@ -22,7 +22,7 @@
  *
  */
 
-#include "websys.h"     /* port dependant system files */
+#include "websys.h"
 #include "webio.h"
 #include "webfs.h"
 
@@ -77,44 +77,38 @@ wi_file *      wi_allfiles;   /* list of all open files */
  * webio top level file open routine. This is just wrapper for the lower
  * level routine - either the Embedded FS, and the host system's native FS.
  *
- * Returns: 0 if OK else negative WIE_ error code.
+ * Returns: 0 if OK else negative WI_E_ error code.
  * 
  */
 
-int
-wi_fopen(wi_sess * sess, char * name, char * mode)
-{
+int wi_fopen(wi_sess * sess, char * name, char * mode) {
    wi_filesys *   fsys;    /* File system which has the file */
    wi_file *      newfile; /* transient file structrure */
    void *         fd;      /* descriptior from fs */
    int            i;
 
    /* Loop through the FS list, trying an open on each */
-   for(i = 0; i < sizeof(wi_filesystems)/sizeof(wi_filesys*); i++)
-   {
+   for (i = 0; i < sizeof(wi_filesystems)/sizeof(wi_filesys*); i++) {
       fsys = wi_filesystems[i];
-      if(fsys == NULL)
-         continue;
+      if (fsys == NULL) {
+    	  continue;
+      }
       fd = fsys->wfs_fopen(name, mode);
-      if(fd)
-      {
+      if (fd) {
          /* Got an open - create a wi_file & fill it in. */
          newfile = wi_newfile(fsys, sess, fd);
-         if(!newfile)
-         {
+         if (!newfile) {
             fsys->wfs_fclose(fd);
-            return WIE_MEMORY;
+            return WI_E_MEMORY;
          }
          return 0;
       }
    }
-   return WIE_NOFILE;
+   return WI_E_NOFILE;
 }
 
 
-int
-wi_fread(char * buf, unsigned size1, unsigned size2, void * filep)
-{
+int wi_fread(char * buf, unsigned size1, unsigned size2, void * filep) {
    int   bytes;
    WI_FILE * fd;
    fd = (WI_FILE *)filep;
@@ -122,9 +116,7 @@ wi_fread(char * buf, unsigned size1, unsigned size2, void * filep)
    return bytes;
 }
 
-int
-wi_fwrite(char * buf, unsigned size1, unsigned size2, void * filep)
-{
+int wi_fwrite(char * buf, unsigned size1, unsigned size2, void * filep) {
    int   bytes;
    WI_FILE * fd;
    fd = (WI_FILE *)filep;
@@ -133,9 +125,7 @@ wi_fwrite(char * buf, unsigned size1, unsigned size2, void * filep)
 }
 
 
-int
-wi_fclose(WI_FILE * fd)
-{
+int wi_fclose(WI_FILE * fd) {
    int   error;
 
    /* close file at lower level, get an error code */
@@ -148,16 +138,12 @@ wi_fclose(WI_FILE * fd)
 }
 
 
-int
-wi_fseek(WI_FILE * fd, long offset, int mode)
-{
+int wi_fseek(WI_FILE * fd, long offset, int mode) {
    return(fd->wf_routines->wfs_fseek(fd->wf_fd, offset, mode));
 }
 
 
-int
-wi_ftell(WI_FILE * fd)
-{
+int wi_ftell(WI_FILE * fd) {
    return(fd->wf_routines->wfs_ftell(fd->wf_fd));
 }
 
@@ -181,21 +167,20 @@ EOFILE * em_openlist;
  * 
  * Make sure a passed fd is really an EOFILE.
  * 
- * Returns 0 if it is, or WIE_BADFILE if not.
+ * Returns 0 if it is, or WI_E_BADFILE if not.
  */
-int
-em_verify(EOFILE * fd)
-{
+int em_verify(EOFILE * fd) {
    EOFILE *    eofile;
 
    /* verify file pointer is valid */
-   for(eofile = em_openlist; eofile;eofile = eofile->eo_next)
-   {
-      if(eofile == fd)
-         break;
+   for (eofile = em_openlist; eofile;eofile = eofile->eo_next) {
+      if (eofile == fd) {
+    	  break;
+      }
    }
-   if(!eofile)
-      return WIE_BADFILE;
+   if (!eofile) {
+	   return WI_E_BADFILE;
+   }
 
    return 0;
 }
@@ -207,44 +192,46 @@ em_verify(EOFILE * fd)
  * returns session, or NULL if not found.
  */
 
-wi_sess * 
-em_lookupsess(void * fd)
-{
+wi_sess * em_lookupsess(void * fd) {
    wi_sess *   sess;
 
-   for(sess = wi_sessions; sess; sess = sess->ws_next)
-      if(sess->ws_filelist->wf_fd == fd)
-         return sess;
+   for (sess = wi_sessions; sess; sess = sess->ws_next) {
+      if (sess->ws_filelist->wf_fd == fd) {
+    	  return sess;
+      }
+   }
 
    return NULL;
 }
 
-WI_FILE *
-em_fopen(char * name, char * mode)
-{
+WI_FILE * em_fopen(char * name, char * mode) {
    em_file *   emf;
    EOFILE *    eofile;
    char *      cmpname = name;
 
    /* Search the efs a name matching the one passed. */
-   for(emf = emfiles; emf; emf = emf->em_next)
-   {
-      if(emf->em_name[0] != *cmpname)  /* fast test of first char */
+   for (emf = emfiles; emf; emf = emf->em_next) {
+      if (emf->em_name[0] != *cmpname) { // fast test of first char
          continue;
+      }
 
-      if(strcmp(emf->em_name, cmpname) == 0)
-         break;
+      if (strcmp(emf->em_name, cmpname) == 0) {
+    	  break;
+      }
    }
-   if(!emf)             /* If file not in list, return NULL */
+   if (!emf) { /* If file not in list, return NULL */
       return NULL;
+   }
 
-   if( *mode != 'r' )   /* All files are RO,otherwise return NULL */
+   if ( *mode != 'r' ) { /* All files are RO,otherwise return NULL */
       return NULL;
+   }
 
    /* We're going to open file. Allocate the transient control structure */
    eofile = (EOFILE *)wi_alloc(sizeof(EOFILE));
-   if(!eofile)
-      return NULL;
+   if (!eofile) {
+	   return NULL;
+   }
    eofile->eo_emfile = emf;
    eofile->eo_position = 0;
 
@@ -252,12 +239,10 @@ em_fopen(char * name, char * mode)
    eofile->eo_next = em_openlist;
    em_openlist = eofile;
 
-   return ( (WI_FILE*)eofile);
+   return ((WI_FILE*)eofile);
 }
 
-int
-em_fread(char * buf, unsigned size1, unsigned size2, void * fd)
-{
+int em_fread(char * buf, unsigned size1, unsigned size2, void * fd) {
    unsigned    datalen;    /* length of data to move */
    EOFILE *    eofile;
    em_file *   emf;
@@ -265,25 +250,27 @@ em_fread(char * buf, unsigned size1, unsigned size2, void * fd)
 
    eofile = (EOFILE *)fd;
    error = em_verify(eofile);
-   if(error)
-      return error;
+   if (error) {
+	   return error;
+   }
 
    emf = eofile->eo_emfile;
 
    /* SSI and forms should not make it this far down the call chain */
-   if(emf->em_flags & (EMF_SSI|EMF_FORM))
-   {
+   if (emf->em_flags & (EMF_SSI|EMF_FORM)) {
       dtrap();
       return 0;
    }
 
    datalen = size1 * size2;
-   if(datalen > (emf->em_size - eofile->eo_position))
-      datalen =  emf->em_size - eofile->eo_position;
+   if (datalen > (emf->em_size - eofile->eo_position)) {
+	   datalen =  emf->em_size - eofile->eo_position;
+   }
 
    /* Check for position at End of File - EOF */
-   if(datalen == 0)
-      return 0;
+   if (datalen == 0) {
+	   return 0;
+   }
 
    memcpy(buf, &emf->em_data[eofile->eo_position], datalen);
    eofile->eo_position += datalen;
@@ -292,10 +279,8 @@ em_fread(char * buf, unsigned size1, unsigned size2, void * fd)
 }
 
 
-int
-em_fwrite(char * buf, unsigned size1, unsigned size2, void * fd)
-{
-   int      error;
+int em_fwrite(char * buf, unsigned size1, unsigned size2, void * fd) {
+   int error;
 
    dtrap();
 
@@ -303,15 +288,14 @@ em_fwrite(char * buf, unsigned size1, unsigned size2, void * fd)
    USE_ARG(size1);
    USE_ARG(size2);
    error = em_verify((EOFILE*)fd);
-   if(error)
-      return error;
+   if (error) {
+	   return error;
+   }
    return 0;
 }
 
 
-int
-em_fclose(void * voidfd)
-{
+int em_fclose(void * voidfd) {
    EOFILE *    passedfd;
    EOFILE *    tmpfd;
    EOFILE *    last;
@@ -320,30 +304,28 @@ em_fclose(void * voidfd)
 
    /* verify file pointer is valid */
    last = NULL;
-   for(tmpfd = em_openlist; tmpfd; tmpfd = tmpfd->eo_next)
-   {
-      if(tmpfd == passedfd)  /* If we found it, unlink */
-      {
-         if(last)
-            last->eo_next = passedfd->eo_next;
-         else
-            em_openlist = passedfd->eo_next;
+   for (tmpfd = em_openlist; tmpfd; tmpfd = tmpfd->eo_next) {
+      if (tmpfd == passedfd) { /* If we found it, unlink */
+         if (last) {
+        	 last->eo_next = passedfd->eo_next;
+         } else {
+        	 em_openlist = passedfd->eo_next;
+         }
          break;
       }
       last = tmpfd;
    }
 
-   if(tmpfd == NULL)       /* fd not in list? */
-      return WIE_BADFILE;
+   if (tmpfd == NULL) { /* fd not in list? */
+      return WI_E_BADFILE;
+   }
 
    wi_free(passedfd);
    return 0;
 }
 
 
-int
-em_fseek(void * fd, long offset, int mode)
-{
+int em_fseek(void * fd, long offset, int mode) {
    EOFILE *    emf;
    int         error;
    int         newpos;
@@ -351,15 +333,14 @@ em_fseek(void * fd, long offset, int mode)
 
    emf = (EOFILE *)fd;
    error = em_verify(emf);
-   if(error)
+   if (error)
       return error;
 
    /* Get file size into local variable */
    size = emf->eo_emfile->em_size;
 
    /* Figure out where new position should be */
-   switch (mode)
-   {
+   switch (mode) {
    case SEEK_SET:
       newpos = offset;
       break;
@@ -376,38 +357,36 @@ em_fseek(void * fd, long offset, int mode)
    }
 
    /* Sanity check new position */
-   if((newpos < 0) || (newpos > size))
-      return WIE_BADPARM;
+   if ((newpos < 0) || (newpos > size)) {
+	   return WI_E_BADPARM;
+   }
 
    emf->eo_position = newpos;
    return 0;
 }
 
-int
-em_ftell(void * fd)
-{
+int em_ftell(void * fd) {
    EOFILE *    emf;
    int         error;
 
    emf = (EOFILE *)fd;
    error = em_verify(emf);
-   if(error)
-      return -1;
+   if (error) {
+	   return -1;
+   }
    
    return(emf->eo_position);
 }
 
-int
-em_push(void * fd, wi_sess * sess)
-{
+int em_push(void * fd, wi_sess * sess) {
    int         error;
    EOFILE *    emf;
    PUSH_ROUTINE * pushfunc;
 
    emf = (EOFILE *)fd;
-   if(emf->eo_emfile->em_routine == NULL)
-	   return WIE_BADFILE;
-
+   if (emf->eo_emfile->em_routine == NULL) {
+	   return WI_E_BADFILE;
+   }
 
    /* call embedded files embedded function */
    dtrap();
@@ -417,6 +396,4 @@ em_push(void * fd, wi_sess * sess)
    return error;
 }
 
-
 #endif  /* WI_EMBFILES */
-

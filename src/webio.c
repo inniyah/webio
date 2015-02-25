@@ -23,7 +23,7 @@
  */
 
 
-#include "websys.h"     /* port dependant system files */
+#include "websys.h"
 #include "webio.h"
 #include "webfs.h"
 
@@ -75,9 +75,9 @@ int wi_init() {
 
    /* Create the web server "listen" socket */
    wi_listen = socket(AF_INET, SOCK_STREAM, 0);
-   if(wi_listen == INVALID_SOCKET) {
+   if (wi_listen == INVALID_SOCKET) {
       dprintf("Error open socket for listen\n");
-      return WIE_SOCKET;
+      return WI_E_SOCKET;
    }
 
    wi_sin.sin_family = AF_INET;
@@ -85,15 +85,15 @@ int wi_init() {
    wi_sin.sin_port = htons( (short)httpport);
    error = bind(wi_listen, (struct sockaddr*)&wi_sin, 
       sizeof(struct sockaddr_in));
-   if(error) {
+   if (error) {
       dprintf("Error %d binding web server\n", error);
-      return WIE_SOCKET;
+      return WI_E_SOCKET;
    }
 
    error = listen(wi_listen, 15);
    if (error) {
       dprintf("Error %d starting listen\n", error);
-      return WIE_SOCKET;
+      return WI_E_SOCKET;
    }   
 
    wi_running = TRUE;
@@ -130,24 +130,24 @@ int wi_poll() {
 
    /* loop through list of open sessions looking for work */
    recvs = sends = 0;
-   for(sess = wi_sessions; sess; sess = sess->ws_next) {
-      if(sess->ws_socket == INVALID_SOCKET) {
+   for (sess = wi_sessions; sess; sess = sess->ws_next) {
+      if (sess->ws_socket == INVALID_SOCKET) {
     	  continue;
       }
 
       /* If socket is reading, load for a select */
-      if(sess->ws_state == WI_HEADER) {
+      if (sess->ws_state == WI_HEADER) {
          recvs++;
          FD_SET(sess->ws_socket, &sel_recv);
-         if(sess->ws_socket > wi_highsocket) {
+         if (sess->ws_socket > wi_highsocket) {
         	 wi_highsocket = sess->ws_socket;
          }
       }
 
-      if((sess->ws_txbufs) || (sess->ws_flags & WF_BINARY)) {
+      if ((sess->ws_txbufs) || (sess->ws_flags & WF_BINARY)) {
          sends++;
          FD_SET(sess->ws_socket, &sel_send);
-         if(sess->ws_socket > wi_highsocket) {
+         if (sess->ws_socket > wi_highsocket) {
         	 wi_highsocket = sess->ws_socket;
          }
       }
@@ -156,75 +156,71 @@ int wi_poll() {
 
    /* See if any of the sockets have input or ready to send */
    sessions = select( wi_highsocket, &sel_recv, &sel_send, NULL, &wi_seltmo);
-   if(sessions == SOCKET_ERROR) {
+   if (sessions == SOCKET_ERROR) {
       error = errno;
       dprintf("select error %d\n", error );
-      return WIE_SOCKET;
+      return WI_E_SOCKET;
    }
 
    /* see if we have a new connection request */
-   if(FD_ISSET(wi_listen, &sel_recv)) {
+   if (FD_ISSET(wi_listen, &sel_recv)) {
       error = wi_sockaccept();
-      if(error) {
+      if (error) {
          printf("Socket accept error %d\n", error);
          return error;
       }
    }
 
    sess = wi_sessions; 
-   while(sess)
-   {
+   while (sess) {
       next_sess = sess->ws_next;
 
       /* jump to here to accelerate things if a session changes state */
 another_state:    
 
-      switch(sess->ws_state)
-      {
+      switch(sess->ws_state) {
       case WI_HEADER:
          /* See if there is data to read */
-         if(FD_ISSET(sess->ws_socket, &sel_recv))
-         {
+         if (FD_ISSET(sess->ws_socket, &sel_recv)) {
             error = recv(sess->ws_socket, 
-               sess->ws_rxbuf + sess->ws_rxsize,
-               sizeof(sess->ws_rxbuf) - sess->ws_rxsize, 0);
+                    sess->ws_rxbuf + sess->ws_rxsize,
+                    sizeof(sess->ws_rxbuf) - sess->ws_rxsize, 0
+			);
 
-            if(error < 0)
-            {
+            if (error < 0) {
                error = errno;
                dprintf("sock recv error %d\n", error );
-               return WIE_SOCKET;
+               return WI_E_SOCKET;
             }
             sess->ws_rxsize += error;
             sess->ws_last = cticks;
          }
-         if(sess->ws_rxsize)  /* unprocessed input http */
-         {
+         if (sess->ws_rxsize) { /* unprocessed input http */
             error = wi_parseheader( sess );  /* Make a best effort to process input */
             sessions++;
          }
          /* If the logic above pushed session into POSTRX (waiting for POST 
           * operation) jump to POSTRX logic, else break.
           */
-         if(sess->ws_state != WI_HEADER)
-            goto another_state;
+         if (sess->ws_state != WI_HEADER) {
+        	 goto another_state;
+         }
          break;
 
       case WI_POSTRX:
          /* See if there is more to read */
          error = recv(sess->ws_socket, 
-            sess->ws_rxbuf + sess->ws_rxsize,
-            sizeof(sess->ws_rxbuf) - sess->ws_rxsize, 0);
+                 sess->ws_rxbuf + sess->ws_rxsize,
+                 sizeof(sess->ws_rxbuf) - sess->ws_rxsize, 0
+         );
 
-         if(error < 0)
-         {
-            if(errno == EWOULDBLOCK)
-               error = 0;
-            else
-            {
+         if (error < 0) {
+            if (errno == EWOULDBLOCK) {
+            	error = 0;
+            } else {
                error = errno;
                dprintf("sock recv error %d\n", error );
-               return WIE_SOCKET;
+               return WI_E_SOCKET;
             }
          }
          sess->ws_rxsize += error;
@@ -234,18 +230,14 @@ another_state:
           * We check for ContentLength field or socket closed 
           */
          data = sess->ws_data;
-         if(data)
-         {
+         if (data) {
             int   contentRx;
 
             contentRx = sess->ws_rxsize - (data - sess->ws_rxbuf);
 
-            if((contentRx >= sess->ws_contentLength) ||
-               (error == ENOTCONN))
-            {
+            if ((contentRx >= sess->ws_contentLength) || (error == ENOTCONN)) {
                error = wi_buildform(sess, data);
-               if(error)
-               {
+               if (error) {
                   wi_senderr(sess, 400);  /* Bad request */
                   break;
                }
@@ -253,37 +245,35 @@ another_state:
                sess->ws_last = cticks;
             }
          }
-         if(sess->ws_state != WI_POSTRX)
+         if (sess->ws_state != WI_POSTRX)
             goto another_state;
 
          break;
 
       case WI_CONTENT:
          error = wi_readfile(sess);
-         if(error)
-         {
+         if (error) {
             sess->ws_state = WI_ENDING;
          }
          sessions++;
-         if(sess->ws_state != WI_CONTENT)
-            goto another_state;
+         if (sess->ws_state != WI_CONTENT) {
+        	 goto another_state;
+         }
 
          break;
 
       case WI_SENDDATA:
-         if((sess->ws_txbufs || (sess->ws_flags & WF_BINARY)) && 
-            FD_ISSET(sess->ws_socket, &sel_send))
-         {
+         if ((sess->ws_txbufs || (sess->ws_flags & WF_BINARY)) && FD_ISSET(sess->ws_socket, &sel_send)) {
             /* socket has data to write */
             error = wi_sockwrite(sess);
-            if(error)
-            {
+            if (error) {
                sess->ws_state = WI_ENDING;
             }
             sessions++;
          }
-         if(sess->ws_state != WI_SENDDATA)
-            goto another_state;
+         if (sess->ws_state != WI_SENDDATA) {
+        	 goto another_state;
+         }
          break;
       case WI_ENDING:
          /* Don't delete session and break, else we'll get a fault
@@ -300,8 +290,7 @@ another_state:
          break;
       }
       /* kill sessions with no recent activity */
-      if((u_long)(sess->ws_last + (15 * TPS)) < cticks)
-      {
+      if ((u_long)(sess->ws_last + (15 * TPS)) < cticks) {
          dtrap();
          dprintf("killing stuck webio session\n");
          wi_delsess(sess);
@@ -323,23 +312,19 @@ another_state:
  * Returns: 0 if normal shutdown, else negative error code.
  */
 
-int wi_thread()
-{
+int wi_thread() {
    int   sessions = 0;
    wi_sess *  sess;
    wi_sess *  nextsess;
 
-   while(wi_running)
-   {
+   while (wi_running) {
       sessions = wi_poll();
-      if( sessions < 0 )
-      {
+      if ( sessions < 0 ) {
          dtrap();    /* restart the server */
           
          /* clean out everything */
          closesocket(wi_listen);
-         for(sess = wi_sessions; sess; sess = nextsess)
-         {
+         for (sess = wi_sessions; sess; sess = nextsess) {
             nextsess = sess->ws_next;
             wi_delsess(sess);
          }
@@ -354,9 +339,7 @@ int wi_thread()
 #endif  /* WI_THREAD */
 
 
-int
-wi_sockaccept()
-{
+int wi_sockaccept() {
    struct sockaddr_in sa;
    socktype    newsock;
    wi_sess *   newsess;
@@ -365,18 +348,15 @@ wi_sockaccept()
 
    sasize = sizeof(struct sockaddr_in);
    newsock = accept(wi_listen, (struct sockaddr * )&sa, &sasize);
-   if(sasize != sizeof(struct sockaddr_in))
-   {
+   if (sasize != sizeof(struct sockaddr_in)) {
       dtrap();
-      return WIE_SOCKET;
+      return WI_E_SOCKET;
    }
 
    /* If the localhost-only flag is set, reject all other hosts */
-   if(wi_localhost)
-   {
+   if (wi_localhost) {
       /* see if remote host is 127.0.0.1 or other version of self */
-      if(htonl(sa.sin_addr.s_addr) != 0x7F000001)
-      {
+      if (htonl(sa.sin_addr.s_addr) != 0x7F000001) {
          struct sockaddr_in local;
          socklen_t slen;
 
@@ -385,14 +365,12 @@ wi_sockaccept()
           */
          memset(&local, 0, sizeof(local));
          slen = sizeof(local);
-         if( getsockname(newsock, (struct sockaddr *)&local, &slen) < 0) 
-         {
+         if ( getsockname(newsock, (struct sockaddr *)&local, &slen) < 0) {
              closesocket(newsock);
              return -1;
          }
 
-         if(sa.sin_addr.s_addr != local.sin_addr.s_addr)
-         {
+         if (sa.sin_addr.s_addr != local.sin_addr.s_addr) {
             closesocket(newsock);
             return 0;   /* not an error */
          }
@@ -401,8 +379,7 @@ wi_sockaccept()
 
    /* Set every socket to non-blocking. */
    error = WI_NOBLOCKSOCK(newsock);
-   if(error)
-   {
+   if (error) {
       dtrap();
       panic("blocking socket");
    }
@@ -411,8 +388,9 @@ wi_sockaccept()
     * object for it 
     */
    newsess = wi_newsess();
-   if(!newsess)
-      return WIE_MEMORY;
+   if (!newsess) {
+	   return WI_E_MEMORY;
+   }
    newsess->ws_socket = newsock;
       
    return 0;
@@ -431,9 +409,7 @@ wi_sockaccept()
  * else negative error code.
  */
 
-int
-wi_parseheader( wi_sess * sess )
-{
+int wi_parseheader( wi_sess * sess ) {
    char *   cp;
    char *   cl;
    char *   rxend;
@@ -443,8 +419,9 @@ wi_parseheader( wi_sess * sess )
 
    /* First find end of HTTP header */
    rxend = strstr(sess->ws_rxbuf, "\r\n\r\n" );
-   if(!rxend)
-      return 0;   /* no header yet - wait some more */
+   if (!rxend) {
+	   return 0; /* no header yet - wait some more */
+   }
 
    sess->ws_data = rxend + 4;
 
@@ -457,16 +434,16 @@ wi_parseheader( wi_sess * sess )
    cmd <<= 8;
    cmd |= sess->ws_rxbuf[3];
 
-   switch(cmd)
-   {
+   switch(cmd) {
    case H_GET:
    case H_POST:
       sess->ws_cmd = cmd;
       break;
    case H_PUT:
       /* Deal with PUT operations in another path */
-      if(cmd == H_PUT)
-         return ( wi_putfile(sess) );
+      if (cmd == H_PUT) {
+    	  return ( wi_putfile(sess) );
+      }
    default:
       dtrap();
       /* unsupported command - send eror and clean up */
@@ -479,20 +456,19 @@ wi_parseheader( wi_sess * sess )
 
    /* Fall to here for GET or POST. Extract the URL */
    cp = wi_nextarg(&sess->ws_rxbuf[3]);
-   if(!cp)
-   {
+   if (!cp) {
       wi_senderr(sess, 400);  /* Bad request */
-      return WIE_CLIENT;
+      return WI_E_CLIENT;
    }
-   if(*cp == '/')
-   {
-      if(*(cp+1) == ' ')
-         sess->ws_uri = wi_rootfile;
-      else
-         sess->ws_uri = cp+1;    /* strip leading slash */
+   if (*cp == '/') {
+      if (*(cp+1) == ' ') {
+    	  sess->ws_uri = wi_rootfile;
+      } else {
+    	  sess->ws_uri = cp+1;    /* strip leading slash */
+      }
+   } else {
+	   sess->ws_uri = cp;
    }
-   else
-      sess->ws_uri = cp;
 
    /* Extract other useful fields from header  */
    sess->ws_auth = wi_getline("Authorization:", cp);
@@ -500,73 +476,67 @@ wi_parseheader( wi_sess * sess )
    sess->ws_host = wi_getline("Host:", cp);
 
    cl = wi_getline("Content-Length:", cp);
-   if(cl)
-      sess->ws_contentLength = atoi(cl);
-   else
-      sess->ws_contentLength = 0;  /* unset */
+   if (cl) {
+	   sess->ws_contentLength = atoi(cl);
+   } else {
+	   sess->ws_contentLength = 0;  /* unset */
+   }
 
    /* Check for name/value pairs and build form if found */
-   if(cmd == H_GET)
-   {
+   if (cmd == H_GET) {
       pairs = strchr(cp, '?');
-      if(pairs)
-      {
+      if (pairs) {
          *pairs++ = 0;     /* Null terminate URI field */
          error = wi_buildform(sess, pairs);
-         if(error)
-         {
+         if (error) {
             wi_senderr(sess, 400);  /* Bad request */
-            return WIE_CLIENT;
+            return WI_E_CLIENT;
          }
       }
-   }
-   else if(cmd != H_GET) /* POST command */
-   {
-      if(cmd != H_POST)
-      {
+   } else if (cmd != H_GET) { /* POST command */
+      if (cmd != H_POST) {
          wi_senderr(sess, 400);  /* Bad request */
-         return WIE_CLIENT;
+         return WI_E_CLIENT;
       }
       /* fall to header parse logic, get name/values from body later */
    }
 
    /* insert the null terminators in any strings in the rxbuf */
-   if((sess->ws_uri > sess->ws_rxbuf) && (sess->ws_uri < rxend))
-      wi_argterm(sess->ws_uri);      /* Null terminate the URI */
-   if((sess->ws_auth > sess->ws_rxbuf) && (sess->ws_auth < rxend))
-      wi_argterm(sess->ws_auth);     /* etc */
-   if((sess->ws_referer > sess->ws_rxbuf) && (sess->ws_referer < rxend))
-      wi_argterm(sess->ws_referer);
-   if((sess->ws_uri > sess->ws_host) && (sess->ws_host < rxend))
-      wi_argterm(sess->ws_host);
+   if ((sess->ws_uri > sess->ws_rxbuf) && (sess->ws_uri < rxend)) {
+	   wi_argterm(sess->ws_uri);      /* Null terminate the URI */
+   }
+   if ((sess->ws_auth > sess->ws_rxbuf) && (sess->ws_auth < rxend)) {
+	   wi_argterm(sess->ws_auth);     /* etc */
+   }
+   if ((sess->ws_referer > sess->ws_rxbuf) && (sess->ws_referer < rxend)) {
+	   wi_argterm(sess->ws_referer);
+   }
+   if ((sess->ws_uri > sess->ws_host) && (sess->ws_host < rxend)) {
+	   wi_argterm(sess->ws_host);
+   }
 
    /* Find and open file to return, */
    error = wi_fopen(sess, sess->ws_uri, "rb");
-   if(error)
-   {
+   if (error) {
       wi_senderr(sess, 404);  /* File not found */
       return error;
    }
 
-   if((sess->ws_filelist == NULL) || 
-      (sess->ws_filelist->wf_routines == NULL) ||
-      (sess->ws_filelist->wf_fd == NULL))
-   {
+   if ((sess->ws_filelist == NULL) ||
+       (sess->ws_filelist->wf_routines == NULL) ||
+       (sess->ws_filelist->wf_fd == NULL)
+   ) {
       dtrap();
-      return WIE_BADFILE;
+      return WI_E_BADFILE;
    }
 
-   if(sess->ws_filelist->wf_routines->wfs_fauth)
-   {
+   if (sess->ws_filelist->wf_routines->wfs_fauth) {
       int      admit;  /* 1 if OK, 0 if authentication fails */
 
-      if(sess->ws_auth == NULL)  /* No auth info in http header */
-      {
+      if (sess->ws_auth == NULL) { /* No auth info in http header */
          admit = sess->ws_filelist->wf_routines->wfs_fauth(
             sess->ws_filelist->wf_fd, "", "");
-      }
-      else     /* Have auth info, parse it and check */
-      {
+      } else { /* Have auth info, parse it and check */
          char name[32];
          char pass[32];
 
@@ -576,11 +546,10 @@ wi_parseheader( wi_sess * sess )
             sess->ws_filelist->wf_fd, name, pass);
       }
 
-      if(!admit)
-      {
+      if (!admit) {
          wi_senderr(sess, 401);  /* Send "Auth required" reply  */
          wi_fclose(sess->ws_filelist);
-         return WIE_PERMIT;
+         return WI_E_PERMIT;
       }
    }
 
@@ -593,15 +562,12 @@ wi_parseheader( wi_sess * sess )
 
    sess->ws_flags &= ~WF_HEADERSENT;   /* header not sent yet */
 
-   if(cmd == H_GET)
-   {
+   if (cmd == H_GET) {
       /* start loading file to return. */
       sess->ws_state = WI_CONTENT;
       error = wi_readfile(sess);
       return error;
-   }
-   else  /* POST, wait for data */
-   {
+   } else { /* POST, wait for data */
       sess->ws_state = WI_POSTRX;
       return 0;
    }
@@ -615,14 +581,12 @@ wi_parseheader( wi_sess * sess )
 
 char * badformhead = "<html><head><title>Form Error</title> \
  <link href=\"praemio-style-main.css\" rel=\"stylesheet\" type=\"text/css\"></head> \
- <body onLoad=\"javascript:{ if(parent.frames[0]&&parent.frames['navig'].Go) parent.frames['navig'].Go()}\" > \
+ <body onLoad=\"javascript:{ if (parent.frames[0]&&parent.frames['navig'].Go) parent.frames['navig'].Go()}\" > \
  <center><br><br><br><h2>";
 
 char * badformtail = "</h2></body></html>";
 
-void
-wi_badform(wi_sess * sess, char * errmsg)
-{
+void wi_badform(wi_sess * sess, char * errmsg) {
    wi_printf(sess, badformhead );
    wi_printf(sess, "Error in form: %s <br>", errmsg);
    wi_printf(sess, badformtail );
@@ -644,53 +608,46 @@ wi_badform(wi_sess * sess, char * errmsg)
  * wi_ssi(). SSI are especially tricky since wi_ssi() will recursivly 
  * call back to wi_readfile()
  *
- * Returns: 0 if no error, else negative WIE_ error code.
+ * Returns: 0 if no error, else negative WI_E_ error code.
  * 
  */
 
-int
-wi_readfile(struct wi_sess_s * sess)
-{
+int wi_readfile(struct wi_sess_s * sess) {
    int         error;
    int         len;
    int         toread;
    wi_file *   fi;     /* info about current file */
 
-
    /* start loading file to return. */
    fi = sess->ws_filelist;
 
    /* Check for embedded form & server-side push handlers */
-   if(fi->wf_routines == &emfs)
-   {
+   if (fi->wf_routines == &emfs) {
       EOFILE * eofile;
       em_file *   emf;
 
       eofile = (EOFILE *)fi->wf_fd;
       emf = eofile->eo_emfile;
 
-      if(emf->em_flags & EMF_FORM)
-      {
+      if (emf->em_flags & EMF_FORM) {
          char * (*formhandler)(wi_sess*);
          char * errmsg;
 
          formhandler = emf->em_routine;
-         if(formhandler == NULL)
-            return WIE_BADFILE;
+         if (formhandler == NULL)
+            return WI_E_BADFILE;
 
          errmsg = formhandler(sess);
-         if(errmsg)
-         {
+         if (errmsg) {
             wi_badform(sess, errmsg);
-            return WIE_BADPARM;
+            return WI_E_BADPARM;
          }
-         if(sess->ws_filelist == NULL)    // done with request
+         if (sess->ws_filelist == NULL) { /* done with request */
             return 0;
-         else
-            fi = sess->ws_filelist;    // re-set local variable
-      }
-      else if(emf->em_flags & EMF_PUSH)   /* handle server push */
-      {
+         } else {
+        	 fi = sess->ws_filelist; /* re-set local variable */
+         }
+      } else if (emf->em_flags & EMF_PUSH) { /* handle server push */
          char * (*pushhandler)(wi_sess*);
 
          /* This is a server-side push file. We pass this session to a 
@@ -703,8 +660,9 @@ wi_readfile(struct wi_sess_s * sess)
 
          pushhandler = emf->em_routine;
          sess->ws_state = WI_PUSHING;
-         if(pushhandler == NULL)
-            return WIE_BADFILE;
+         if (pushhandler == NULL) {
+        	 return WI_E_BADFILE;
+         }
 
          dprintf("Server push call...\n");
          pushhandler(sess);
@@ -718,17 +676,17 @@ readmore:
    toread = sizeof(fi->wf_data) - fi->wf_inbuf;
    len = wi_fread( &fi->wf_data[fi->wf_inbuf], 1, toread, fi );
 
-   if(len <= 0)
-   {
+   if (len <= 0) {
       wi_fclose(fi);
 
       /* See if there is another input file "outside" the current one.
        * This happens if the file we just closed was an SSI
        */
-      if(sess->ws_filelist)
-         return 0;
-      else
-         goto readdone;
+      if (sess->ws_filelist) {
+    	  return 0;
+      } else {
+    	  goto readdone;
+      }
    }
 
    sess->ws_last = cticks;
@@ -737,33 +695,27 @@ readmore:
    /* fast path for binary files. We've read first buffer from file
     * now - just jump to the sending code.
     */
-   if(sess->ws_flags & WF_BINARY)
-      goto readdone;
+   if (sess->ws_flags & WF_BINARY) {
+	   goto readdone;
+   }
 
    /* Copy the file into a send buffer while searching for SSI strings */
-   for(len = fi->wf_nextbuf; len < fi->wf_inbuf; len++)
-   {
-      if((fi->wf_data[len + 4] == '#') && 
-         (fi->wf_data[len + 1] == '!'))
-      {
+   for (len = fi->wf_nextbuf; len < fi->wf_inbuf; len++) {
+      if ((fi->wf_data[len + 4] == '#') && (fi->wf_data[len + 1] == '!')) {
          char * ssi_end;
 
          /* got complete SSI string? */
          ssi_end = strstr( &fi->wf_data[len], "-->");
 
-         if(ssi_end)
-         {
+         if (ssi_end) {
             int ssi_len = (ssi_end - &fi->wf_data[len]) + 3;
 
             fi->wf_nextbuf = len;      /* Set address of SSI text */
 
-            if(strncmp( &fi->wf_data[len], "<!--#include", 12) == 0)
-            {
+            if (strncmp( &fi->wf_data[len], "<!--#include", 12) == 0) {
                /* Call routine to process SSI string in file */
                error = wi_ssi(sess);
-            }
-            else if(strncmp( &fi->wf_data[len], "<!--#exec ", 10) == 0)
-            {
+            } else if (strncmp( &fi->wf_data[len], "<!--#exec ", 10) == 0) {
                /* Call routine to process SSI string in file */
                error = wi_exec(sess);
             }
@@ -772,32 +724,26 @@ readmore:
             len += ssi_len;
 
             /* break if SSI changed the current file. */
-            if(sess->ws_filelist != fi)
-            {
+            if (sess->ws_filelist != fi) {
                fi->wf_nextbuf = len;
                return 0;
             }
             fi->wf_nextbuf = 0;  /* force jump to readmore */
-         }
-         else  /* end not found - SSI text may end in next block */
-         {
+         } else { /* end not found - SSI text may end in next block */
             dtrap();
          }
       }
 
       /* Make sure we have space for char in txbuf */
-      if((sess->ws_txbufs == NULL) ||
-         (sess->ws_txtail->tb_total >= WI_TXBUFSIZE))
-      {
-         if(wi_txalloc(sess) == NULL)
-            return WIE_MEMORY;
+      if ((sess->ws_txbufs == NULL) || (sess->ws_txtail->tb_total >= WI_TXBUFSIZE)) {
+         if (wi_txalloc(sess) == NULL)
+            return WI_E_MEMORY;
       }
       sess->ws_txtail->tb_data[sess->ws_txtail->tb_total++] = fi->wf_data[len];
    }
 
    /* See if we need to do more reading */
-   if((fi->wf_nextbuf == 0) && (len > 0))
-   {
+   if ((fi->wf_nextbuf == 0) && (len > 0)) {
       fi->wf_inbuf = 0;    /* no unread data in read buffer */
       goto readmore;
    }
@@ -816,50 +762,44 @@ readdone:
  * This is called when a session has read all the data to send 
  * from files/scripts,and is ready to send it to socket.
  * 
- * Returns: 0 if no error, else negative WIE_ error code.
+ * Returns: 0 if no error, else negative WI_E_ error code.
  */
 
-int
-wi_sockwrite(wi_sess * sess)
-{
+int wi_sockwrite(wi_sess * sess) {
    txbuf *  txbuf;
    int      error;
    int      tosend;
    int      contentlen = 0;
 
-   if(sess->ws_flags & WF_BINARY)
-   {
+   if (sess->ws_flags & WF_BINARY) {
       error = wi_movebinary(sess, sess->ws_filelist);
       return error;
    }
 
-   if((sess->ws_flags & WF_HEADERSENT) == 0)   /* header sent yet? */
-   {
+   if ((sess->ws_flags & WF_HEADERSENT) == 0) { /* header sent yet? */
       /* Build and prepend OK header - first calculate length. */
-      for(txbuf = sess->ws_txbufs; txbuf; txbuf = txbuf->tb_next)
+      for (txbuf = sess->ws_txbufs; txbuf; txbuf = txbuf->tb_next)
          contentlen += txbuf->tb_total;
 
       error = wi_replyhdr(sess, contentlen);
-      if(error)
-         return WIE_SOCKET;
+      if (error) {
+    	  return WI_E_SOCKET;
+      }
    }
 
-   while(sess->ws_txbufs) 
-   {
+   while (sess->ws_txbufs) {
       txbuf = sess->ws_txbufs;
       tosend = txbuf->tb_total - txbuf->tb_done;
       error = send(sess->ws_socket, &txbuf->tb_data[txbuf->tb_done], tosend, 0);
-      if(error != tosend)
-      {
+      if (error != tosend) {
          error = errno;
-         if(error == EWOULDBLOCK)
-         {
+         if (error == EWOULDBLOCK) {
             txbuf->tb_done = 0;
             return 0;
          }
          dprintf("Socket write error %s\n", strerror(errno));
          dtrap(); 
-         return WIE_SOCKET;
+         return WI_E_SOCKET;
       }
       /* Fall to here if we sent the whole txbuf. Unlink & free it */
       sess->ws_txbufs = txbuf->tb_next;
@@ -879,13 +819,11 @@ wi_sockwrite(wi_sess * sess)
  * This is used by forms processing routines to return the passed file in
  * file in reply to a GET or POST request.
  *
- * Returns: 0 if no error, else negative WIE_ error code.
+ * Returns: 0 if no error, else negative WI_E_ error code.
  * 
  */
 
-int
-wi_redirect(wi_sess * sess, char * filename)
-{
+int wi_redirect(wi_sess * sess, char * filename) {
    int      error;
    char *   pairs;
 
@@ -898,12 +836,10 @@ wi_redirect(wi_sess * sess, char * filename)
 
    /* parse any name/value pairs appended to file name */
    pairs = strchr(filename, '?');
-   if(pairs)
-   {
+   if (pairs) {
       *pairs++ = 0;     /* Null terminate URI field */
       error = wi_buildform(sess, pairs);
-      if(error)
-      {
+      if (error) {
          dtrap();       /* bad html from caller? */
          return error;
       }
@@ -911,8 +847,7 @@ wi_redirect(wi_sess * sess, char * filename)
 
    /* Find and open new file to return, */
    error = wi_fopen(sess, filename, "rb");
-   if(error)
-   {
+   if (error) {
       wi_senderr(sess, 404);  /* File not found */
       return error;
    }
@@ -925,24 +860,18 @@ wi_redirect(wi_sess * sess, char * filename)
    return 0;   /* OK return */
 }
 
-
-
 /* wi_putfile()
  * 
  * This is called when a session receives a PUT command.
  * 
  *
- * Returns: 0 if no error, else negative WIE_ error code.
+ * Returns: 0 if no error, else negative WI_E_ error code.
  * 
  */
 
-int
-wi_putfile( wi_sess * sess)
-{
-
+int wi_putfile( wi_sess * sess) {
    dtrap();
    USE_ARG(sess);
 
    return 0;      /* No Error */
 }
-

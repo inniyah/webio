@@ -22,7 +22,7 @@
  *
  */
 
-#include "websys.h"     /* port dependant system files */
+#include "websys.h"
 #include "webio.h"
 #include "webfs.h"
 
@@ -53,15 +53,12 @@ u_long   wi_totalblocks = 0;
 
 int   wi_marker = 0x4D454D4D;    /* MEMM */
 
-struct memmarker
-{
+struct memmarker {
    int   marker;
    int   msize;   /* size of this block */
 };
 
-char *
-wi_alloc(int bufsize)
-{
+char * wi_alloc(int bufsize) {
    char * buffer;
    struct memmarker * mark;
    int   totalsize;
@@ -70,8 +67,9 @@ wi_alloc(int bufsize)
 
    buffer = WI_MALLOC(totalsize);
     /* Bugfix from PB 03/07/2009 17.58.07 */
-   if (buffer == NULL)
-      return (NULL);
+   if (buffer == NULL) {
+	   return (NULL);
+   }
 
    memset(buffer, 0, totalsize);
 
@@ -84,15 +82,13 @@ wi_alloc(int bufsize)
    wi_blocks++;
    wi_totalblocks++;
    wi_bytes += bufsize;
-   if(wi_bytes > wi_maxbytes)
+   if (wi_bytes > wi_maxbytes)
       wi_maxbytes = wi_bytes;
 
    return buffer;
 }
 
-void
-wi_free(void * buff)
-{
+void wi_free(void * buff) {
    struct memmarker * mark;
    char * cp;
 
@@ -101,12 +97,12 @@ wi_free(void * buff)
    mark--;        /* marker is prepended to buffer */
 
    /* check for corruption of pre-buffer area */
-   if(mark->marker != wi_marker)
+   if (mark->marker != wi_marker)
       panic("wi_free: pre");
    
    /* check for corruption of post-buffer area */
    cp = (char*)buff;
-   if( *(int*)(cp + mark->msize) != wi_marker)
+   if ( *(int*)(cp + mark->msize) != wi_marker)
       panic("wi_free: post");
    
    wi_blocks--;
@@ -118,24 +114,25 @@ wi_free(void * buff)
 
 /* txbuf constructor */
 
-txbuf *
-wi_txalloc(wi_sess * websess)
-{
+txbuf * wi_txalloc(wi_sess * websess) {
    txbuf * newtx;
 
    newtx = (txbuf*)wi_alloc( sizeof(txbuf) );
-   if(!newtx)
-      return NULL;
+   if (!newtx) {
+	   return NULL;
+   }
 
    /* Install new TX buffer at end of session chain */
-   if(websess->ws_txtail)
-      websess->ws_txtail->tb_next = newtx;   /* add to existing tail */
+   if (websess->ws_txtail) {
+	   websess->ws_txtail->tb_next = newtx;   /* add to existing tail */
+   }
 
    websess->ws_txtail = newtx;      /* new buffer is new tail */
 
    /* If empty, also make it head */
-   if(websess->ws_txbufs == NULL)
-      websess->ws_txbufs = newtx;
+   if (websess->ws_txbufs == NULL) {
+	   websess->ws_txbufs = newtx;
+   }
 
    newtx->tb_session = websess;     /* backpointer to session */
 
@@ -144,9 +141,7 @@ wi_txalloc(wi_sess * websess)
 
 /* txbuf destructor */
 
-void
-wi_txfree(txbuf * oldtx)
-{
+void wi_txfree(txbuf * oldtx) {
    wi_sess *   websess;
    txbuf *     tmptx;
    txbuf *     last;
@@ -156,35 +151,29 @@ wi_txfree(txbuf * oldtx)
     */
    websess = oldtx->tb_session;
    last = NULL;
-   for(tmptx = websess->ws_txbufs; tmptx; tmptx = tmptx->tb_next)
-   {
-      if(tmptx == oldtx)
-      {
-         if(last)
-            last->tb_next = oldtx->tb_next;
-         else
-            websess->ws_txbufs = oldtx->tb_next;
-
+   for (tmptx = websess->ws_txbufs; tmptx; tmptx = tmptx->tb_next) {
+      if (tmptx == oldtx) {
+         if (last) {
+        	 last->tb_next = oldtx->tb_next;
+         } else {
+        	 websess->ws_txbufs = oldtx->tb_next;
+         }
          break;
       }
    }
 
    wi_free(oldtx);
-
    return;
 }
 
 
 /* wi_sess constructor */
 
-wi_sess *
-wi_newsess(void)
-{
+wi_sess * wi_newsess(void) {
    wi_sess * newsess;
 
    newsess = (wi_sess *)wi_alloc( sizeof(wi_sess) );
-   if(!newsess)
-   {
+   if (!newsess) {
       dprintf("wi_newsess: out of memory.\n");
       return NULL;
    }
@@ -205,58 +194,47 @@ wi_newsess(void)
 
 /* wi_sess destructor */
 
-void
-wi_delsess(wi_sess * oldsess)
-{
+void wi_delsess(wi_sess * oldsess) {
    wi_sess * tmpsess;
    wi_sess * lastsess;
 
-   if(oldsess->ws_socket != INVALID_SOCKET)
-   {
+   if (oldsess->ws_socket != INVALID_SOCKET) {
       closesocket(oldsess->ws_socket);
       oldsess->ws_socket = 0;
    }
 
    /* Unlink from master session list */
    lastsess = NULL;
-   for(tmpsess = wi_sessions; tmpsess; tmpsess = tmpsess->ws_next)
-   {
-      if(tmpsess == oldsess)     /* Found session to unlink? */
-      {
-         if(lastsess)
-            lastsess->ws_next = tmpsess->ws_next;
-         else
-            wi_sessions  = tmpsess->ws_next;
+   for (tmpsess = wi_sessions; tmpsess; tmpsess = tmpsess->ws_next) {
+      if (tmpsess == oldsess) { /* Found session to unlink? */
+         if (lastsess) {
+        	 lastsess->ws_next = tmpsess->ws_next;
+         } else {
+        	 wi_sessions  = tmpsess->ws_next;
+         }
          break;
       }
       lastsess= tmpsess;
    }
 
    /* Make sure there are no dangling resources */
-   if(oldsess->ws_txbufs)
-   {
-      while(oldsess->ws_txbufs)
-      {
+   if (oldsess->ws_txbufs) {
+      while (oldsess->ws_txbufs) {
          wi_txfree(oldsess->ws_txbufs);
       }
    }
-   if(oldsess->ws_filelist)
-   {
-      if(oldsess->ws_filelist)
-      {
+   if (oldsess->ws_filelist) {
+      if (oldsess->ws_filelist) {
          wi_fclose( oldsess->ws_filelist);
       }
    }
    /* Fix submitted by PB     09/11/2009 18.39.29 */
-   if(oldsess->ws_formlist)
-   {
+   if (oldsess->ws_formlist) {
        struct wi_form_s * nextform;
-       while(oldsess->ws_formlist)
-       {
+       while (oldsess->ws_formlist) {
            nextform = oldsess->ws_formlist->next;
            wi_free( oldsess->ws_formlist);
-           if(nextform)
-           {
+           if (nextform) {
                dtrap(); // check double-form first time through...
            }
            oldsess->ws_formlist = nextform;
@@ -270,14 +248,13 @@ wi_delsess(wi_sess * oldsess)
 
 /* wi_file constructor */
 
-wi_file *
-wi_newfile(wi_filesys * fsys, wi_sess * sess, void * fd)
-{
+wi_file * wi_newfile(wi_filesys * fsys, wi_sess * sess, void * fd) {
    wi_file *      newfile;
 
    newfile = (wi_file *)wi_alloc( sizeof(wi_file));
-   if(!newfile)
-      return NULL;
+   if (!newfile) {
+	   return NULL;
+   }
 
    newfile->wf_fd = fd;
    newfile->wf_routines = fsys;
@@ -293,9 +270,7 @@ wi_newfile(wi_filesys * fsys, wi_sess * sess, void * fd)
 
 /* wi_file destructor */
 
-int
-wi_delfile(wi_file * delfile)
-{
+int wi_delfile(wi_file * delfile) {
    wi_sess *   sess;
    wi_file *   tmpfi;
    wi_file *   last;
@@ -303,21 +278,19 @@ wi_delfile(wi_file * delfile)
    /* unlink file from session list */
    sess = delfile->wf_sess;
    last = NULL;
-   for(tmpfi = sess->ws_filelist; tmpfi; tmpfi = tmpfi->wf_next)
-   {
-      if(tmpfi == delfile)
-      {
-         if(last)
-            last->wf_next = delfile->wf_next;
-         else
-            sess->ws_filelist = delfile->wf_next;
+   for (tmpfi = sess->ws_filelist; tmpfi; tmpfi = tmpfi->wf_next) {
+      if (tmpfi == delfile) {
+         if (last) {
+        	 last->wf_next = delfile->wf_next;
+         } else {
+        	 sess->ws_filelist = delfile->wf_next;
+         }
          break;
       }
       last = tmpfi;
    }
 
    wi_free(delfile);
-
    return 0;
 }
 

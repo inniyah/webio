@@ -22,7 +22,7 @@
  *
  */
 
-#include "websys.h"     /* port dependant system files */
+#include "websys.h"
 #include "webio.h"
 #include "webfs.h"
 
@@ -56,20 +56,16 @@ struct httperror {
  * 
  * This is called when a session needs to send an error to the client..
  *
- * Returns: 0 if a;ll went OK, else negative WIE_ error code.
+ * Returns: 0 if a;ll went OK, else negative WI_E_ error code.
  */
 
-int
-wi_senderr(wi_sess * sess, int httpcode )
-{
+int wi_senderr(wi_sess * sess, int httpcode ) {
    int      i;
    char *   cp;
    char *   errortext = "Unknown HTTP Error";
 
-   for(i = 0; i < (sizeof(httperrors)/sizeof(struct httperror)); i++)
-   {
-      if(httperrors[i].errcode == httpcode)
-      {
+   for (i = 0; i < (sizeof(httperrors)/sizeof(struct httperror)); i++) {
+      if (httperrors[i].errcode == httpcode) {
          errortext = httperrors[i].errtext;
          break;
       }
@@ -80,8 +76,7 @@ wi_senderr(wi_sess * sess, int httpcode )
    cp = hdrbuf + strlen(hdrbuf);
    sprintf(cp, "Date: %s GMT\r\n", wi_getdate(sess) );
    cp += strlen(cp);
-   if(httpcode == 401)
-   {
+   if (httpcode == 401) {
       sprintf(cp, "WWW-Authenticate: Basic realm=\"%s\"\r\n", sess->ws_uri );
       cp += strlen(cp);
    }
@@ -93,11 +88,9 @@ wi_senderr(wi_sess * sess, int httpcode )
    /* Add some text for browser to display */
    sprintf(cp, "<html><head><title>Error %d</title></head>\r\n", httpcode);
    cp += strlen(cp);
-   sprintf(cp, "<body><h2>Error %d: %s<br></h2>\r\n", 
-      httpcode, errortext);
+   sprintf(cp, "<body><h2>Error %d: %s<br></h2>\r\n", httpcode, errortext);
    cp += strlen(cp);
-   if(sess->ws_uri)
-   {
+   if (sess->ws_uri) {
       sprintf(cp, "File: %s<br>\r\n", sess->ws_uri);
       cp += strlen(cp);
    }
@@ -116,9 +109,7 @@ wi_senderr(wi_sess * sess, int httpcode )
 }
 
 
-int
-wi_replyhdr(wi_sess * sess, int contentlen)
-{
+int wi_replyhdr(wi_sess * sess, int contentlen) {
    char *   cp;
    int      hdrlen;
    int      error;
@@ -138,11 +129,10 @@ wi_replyhdr(wi_sess * sess, int contentlen)
 
    hdrlen = strlen(hdrbuf);
    error = send(sess->ws_socket, hdrbuf, hdrlen, 0);
-   if(error < hdrlen)
-   {
+   if (error < hdrlen) {
       dtrap();    /* Does this ever happen? */
       error = errno;
-      return WIE_SOCKET;
+      return WI_E_SOCKET;
    }
    sess->ws_flags |= WF_HEADERSENT;
    return 0;
@@ -159,14 +149,11 @@ wi_replyhdr(wi_sess * sess, int contentlen)
  * Returns 0 if OK, else negative error code. 
  */
 
-int
-wi_movebinary(wi_sess * sess, wi_file * fi)
-{
+int wi_movebinary(wi_sess * sess, wi_file * fi) {
    int   filelen;
    int   error;
 
-   if((sess->ws_flags & WF_HEADERSENT) == 0)   /* header sent yet? */
-   {
+   if ((sess->ws_flags & WF_HEADERSENT) == 0) { /* header sent yet? */
       int   current;
       current = wi_ftell(fi);
       wi_fseek(fi, 0, SEEK_END);
@@ -175,32 +162,28 @@ wi_movebinary(wi_sess * sess, wi_file * fi)
       wi_replyhdr(sess, filelen);
    }
 
-   while(sess->ws_state == WI_SENDDATA)
-   {
+   while (sess->ws_state == WI_SENDDATA) {
       /* see if we need to get another block from the file */
-      if(fi->wf_inbuf == 0)
-      {
+      if (fi->wf_inbuf == 0) {
          fi->wf_inbuf = wi_fread(fi->wf_data, 1, sizeof(fi->wf_data), fi );
 
-         if(fi->wf_inbuf < 0)
-            return WIE_BADFILE;
+         if (fi->wf_inbuf < 0) {
+        	 return WI_E_BADFILE;
+         }
       }
       error = send(sess->ws_socket, fi->wf_data, fi->wf_inbuf, 0);
-      if(error < 0)
-      {
+      if (error < 0) {
          error = errno;
-         if(error == EWOULDBLOCK)
-            return 0;      /* try again later */
-         else
-            return WIE_SOCKET;
+         if (error == EWOULDBLOCK) {
+        	 return 0;      /* try again later */
+         } else {
+        	 return WI_E_SOCKET;
+         }
       }
-      if(fi->wf_inbuf < sizeof(fi->wf_data))  /* end of file? */
-      {
+      if (fi->wf_inbuf < sizeof(fi->wf_data)) { /* end of file? */
          wi_fclose(fi);
-         wi_txdone(sess);     /* will cause break from while() loop */
-      }
-      else
-      {
+         wi_txdone(sess);     /* will cause break from while () loop */
+      } else {
          fi->wf_inbuf = 0;    /* clear buffer for another file read */
       }
    }
@@ -208,19 +191,14 @@ wi_movebinary(wi_sess * sess, wi_file * fi)
    return 0;   /* OK return */
 }
 
-int
-wi_txdone(wi_sess * sess)
-{
+int wi_txdone(wi_sess * sess) {
 
 	/* If connection is persistent change the state to read the next file  */
-   if(sess->ws_flags & WF_PERSIST)
-   {
+   if (sess->ws_flags & WF_PERSIST) {
       dtrap();
       sess->ws_state = WI_HEADER;
 	  return 0;
-   }
-   else if(sess->ws_flags & WF_SVRPUSH)
-   {
+   } else if (sess->ws_flags & WF_SVRPUSH) {
  	  int	error;
 	  WI_FILE * fi;
 
@@ -228,13 +206,12 @@ wi_txdone(wi_sess * sess)
 
       /* poll server push routine */
 	  fi = sess->ws_filelist;
-	  if(fi->wf_routines->wfs_push == NULL)
-		  return WIE_BADFILE;
+	  if (fi->wf_routines->wfs_push == NULL) {
+		  return WI_E_BADFILE;
+	  }
 	  error = fi->wf_routines->wfs_push(fi->wf_fd, sess);
 	  return error;
-   }
-   else
-   {
+   } else {
 	   /* done with normaal connection - close the socket and mark 
 	   * session for deletion; */
 
@@ -256,20 +233,22 @@ wi_txdone(wi_sess * sess)
  * 
  */
 
-char * 
-wi_nextarg( char * argbuf )
-{
-   while(*argbuf > ' ')    /* move to next space or CR */
+char * wi_nextarg( char * argbuf ) {
+   while (*argbuf > ' ') { /* move to next space or CR */
       argbuf++;
+   }
    /* if we are at the end of a line, return null (no more args) */
-   if(*argbuf != ' ')
-      return NULL;
-   while(*argbuf == ' ')   /* move to next arg */
+   if (*argbuf != ' ') {
+	   return NULL;
+   }
+   while (*argbuf == ' ') { /* move to next arg */
       argbuf++;
-   if(*argbuf < ' ')
-      return NULL;
-   else
-      return argbuf;
+   }
+   if (*argbuf < ' ') {
+	   return NULL;
+   } else {
+	   return argbuf;
+   }
 }
 
 /* wi_argncpy()
@@ -282,11 +261,9 @@ wi_nextarg( char * argbuf )
  * 
  */
 
-int 
-wi_argncpy(char * buf, char * arg, int size )
-{
+int wi_argncpy(char * buf, char * arg, int size ) {
    int   count = 0;
-   while((++count < size) && (*arg > ' '))
+   while ((++count < size) && (*arg > ' '))
       *buf++ = *arg++;
    return count;
 }
@@ -300,21 +277,18 @@ wi_argncpy(char * buf, char * arg, int size )
  * Returns 0 if tags match, -1 if not.
  */
 
-int
-wi_tagcmp(char * tag1, char * tag2)
-{
-   while(*tag1 > ' ')
-   {
-      if((*tag1++ | 0x20) != (*tag2++ | 0x20))
+int wi_tagcmp(char * tag1, char * tag2) {
+   while (*tag1 > ' ') {
+      if ((*tag1++ | 0x20) != (*tag2++ | 0x20))
          return -1;
    }
    /* tags match for length of tag1 - make sure tag2 terminates here. */
-   if(*tag2 > ' ')
-      return -1;     /* both tags terminated */
-   else
-      return 0;      /* tag 2 is longer */
+   if (*tag2 > ' ') {
+	   return -1; /* both tags terminated */
+   } else {
+	   return 0; /* tag 2 is longer */
+   }
 }
-
 
 /* wi_getline()
  * 
@@ -330,27 +304,23 @@ wi_tagcmp(char * tag1, char * tag2)
  * 
  */
 
-char * 
-wi_getline( char * linetype, char * httphdr )
-{
+char * wi_getline( char * linetype, char * httphdr ) {
    char *   cp;
    int      typelen;
 
    typelen = strlen(linetype);
-   for(cp = httphdr; cp < (httphdr + WI_RXBUFSIZE); cp++)
-   {
-      if(*cp == *linetype)    /* Got a match for first char? */
-      {
-         if(strnicmp(cp, linetype, typelen) == 0)
-         {
+   for (cp = httphdr; cp < (httphdr + WI_RXBUFSIZE); cp++) {
+      if (*cp == *linetype) {  /* Got a match for first char? */
+         if (strnicmp(cp, linetype, typelen) == 0) {
             cp = wi_nextarg(cp);
-            if(!cp)
-               return NULL;
+            if (!cp) {
+            	return NULL;
+            }
             wi_argterm(cp);
             return(cp);
          }
       }
-      if(strncmp(cp, "\r\n\r\n", 4) == 0)
+      if (strncmp(cp, "\r\n\r\n", 4) == 0)
          return NULL;
    }
 //   dtrap();       /* Didn't find end OR field??? */
@@ -368,40 +338,38 @@ wi_getline( char * linetype, char * httphdr )
  * 
  */
 
-char * 
-wi_argterm( char * arg )
-{
-   while(*arg > ' ' )
-      arg++;
+char * wi_argterm( char * arg ) {
+   while (*arg > ' ' ) {
+	   arg++;
+   }
    *(arg++) = 0;
-   while((*arg <= ' ') && (*arg > 0))
-      arg++;
-   if(*arg)
-      return arg;
-   else
-      return NULL;
+   while ((*arg <= ' ') && (*arg > 0)) {
+	   arg++;
+   }
+   if (*arg) {
+	   return arg;
+   } else {
+	   return NULL;
+   }
 }
 
 /* atocode() - return a code for a 2 byte hex calue */
 
-unsigned
-atocode(char * cp)
-{
+unsigned atocode(char * cp) {
     unsigned   value = 0;
     unsigned   digit;
     int        i;
 
-    for(i = 0; i <2; i++)
-    {
-        if (*cp >= '0' && *cp <= '9')
-            digit = (unsigned) (*cp - '0');
-        else if (*cp >= 'a' && *cp <= 'f')
-            digit = (unsigned) (*cp - 'a') + 10;
-        else if (*cp >= 'A' && *cp <= 'F')
-            digit = (unsigned) (*cp - 'A') + 10;
-        else
-            break;
-
+    for (i = 0; i < 2; i++) {
+        if (*cp >= '0' && *cp <= '9') {
+        	digit = (unsigned) (*cp - '0');
+        } else if (*cp >= 'a' && *cp <= 'f') {
+        	digit = (unsigned) (*cp - 'a') + 10;
+        } else if (*cp >= 'A' && *cp <= 'F') {
+        	digit = (unsigned) (*cp - 'A') + 10;
+        } else {
+        	break;
+        }
         value = (value << 4) + digit;
         cp++;
     }
@@ -417,28 +385,23 @@ atocode(char * cp)
  * 
  */
 
-void     
-wi_urldecode(char * utext)
-{
+void wi_urldecode(char * utext) {
    char * cp = utext;
    u_char code;
 
-   while(*cp > ' ')
-   {
-      if(*cp == '+')    /* plus signs always convert to space */
+   while (*cp > ' ') {
+      if (*cp == '+') { /* plus signs always convert to space */
          *cp++ = ' ';
-      else if(*cp == '%')  /* Get hex code followinf percent */
-      {
+      } else if (*cp == '%') { /* Get hex code followinf percent */
          code = (u_char)atocode(cp + 1);
          /* Make sure code was valid (nonzero) */
-         if(code)
-         {
+         if (code) {
             *cp++ = (char)code;
             memmove(cp, cp+2, strlen(cp)-1);
          }
+      } else {
+    	  cp++;
       }
-      else
-         cp++;
    }
 
    return;
@@ -450,50 +413,51 @@ wi_urldecode(char * utext)
  * Extract the name/value pairs from the second parameter, build a form
  * structure with them, and attach the form to the passed session.
  *
- * Returns: 0 if OK else negative WIE_ error code.
+ * Returns: 0 if OK else negative WI_E_ error code.
  * 
  */
 
 
-int
-wi_buildform(wi_sess * sess, char * pairs)
-{
+int wi_buildform(wi_sess * sess, char * pairs) {
    char *      cp;
    wi_form *   form;
    int         i;
    int         pairct = 0;
 
    /* first, count the name/value pairs */
-   for(cp = pairs; *cp; cp++)
-   {
-      if(*cp == '=')
-         pairct++;
-      if(*cp <= ' ')
-         break;
+   for (cp = pairs; *cp; cp++) {
+      if (*cp == '=') {
+    	  pairct++;
+      }
+      if (*cp <= ' ') {
+    	  break;
+      }
    }
 
    /* get a buffer big enough for the form, including all the 
     * name/value pair pointers. 
     */
    form = (wi_form*)wi_alloc( sizeof(wi_form) + (pairct * sizeof(wi_pair)));
-   if(!form)
-      return WIE_MEMORY;
+   if (!form) {
+	   return WI_E_MEMORY;
+   }
 
    form->paircount = pairct;
    cp = pairs;
-   for(i = 0; i < pairct; i++)
-   {
+   for (i = 0; i < pairct; i++) {
       form->pairs[i].name = cp;
       cp = strchr(cp, '=');
-      if(!cp)
-         return WIE_CLIENT;
+      if (!cp) {
+    	  return WI_E_CLIENT;
+      }
       *cp++ = 0;
       form->pairs[i].value = cp;
       cp = strchr(cp, '&');
-      if(!cp)
-         wi_argterm(form->pairs[i].value);
-      else
-         *cp++ = 0;
+      if (!cp) {
+    	  wi_argterm(form->pairs[i].value);
+      } else {
+    	  *cp++ = 0;
+      }
       /* Decode spaces ("+") and %20 type inserts */
       wi_urldecode(form->pairs[i].name);
       wi_urldecode(form->pairs[i].value);
@@ -526,38 +490,36 @@ struct wi_ftype {
 };
 
 
-int
-wi_setftype(wi_sess * sess)
-{
+int wi_setftype(wi_sess * sess) {
    int      i;
    char *   lastdot;
    u_long   type;
 
    lastdot = strrchr(sess->ws_uri, '.');
-   if(!lastdot)
-      return FALSE;  /* no dot, assume not binary */
+   if (!lastdot) {
+	   return FALSE;  /* no dot, assume not binary */
+   }
 
    lastdot++;
    type = 0;
 
    /* find the last dot & get the next 4 chars after it. */
-   for(i = 0;i < 4; i++)
-   {
+   for (i = 0;i < 4; i++) {
       type <<= 8;
       /* get next char */
       type |= (u_long)((*lastdot) & 0x000000FF);     
       type &= ~0x20;    /* Make uppercase */
-      if(*lastdot >= ' ')  /* bump pointer if not at end */
+      if (*lastdot >= ' ') { /* bump pointer if not at end */
          lastdot++;
+      }
    }
 
    /* see if the file is one of the binary types */
-   for(i = 0;i < sizeof(wi_ftypes)/sizeof(struct wi_ftype); i++)
-   {
-      if(wi_ftypes[i].ext == type)
-      {
-         if(wi_ftypes[i].flags & FT_BINARY)
-            sess->ws_flags |= WF_BINARY;
+   for (i = 0;i < sizeof(wi_ftypes)/sizeof(struct wi_ftype); i++) {
+      if (wi_ftypes[i].ext == type) {
+         if (wi_ftypes[i].flags & FT_BINARY) {
+        	 sess->ws_flags |= WF_BINARY;
+         }
          sess->ws_ftype = wi_ftypes[i].mimetype;;
          return TRUE;
       }
@@ -578,9 +540,7 @@ wi_setftype(wi_sess * sess)
  * Returns 0 if OK, else negative error code
  */
 
-int
-wi_ssi(wi_sess * sess)
-{
+int wi_ssi(wi_sess * sess) {
    char *      ssitext;
    char *      ssifname;      /* name of SSI file */
    char *      endname;
@@ -596,36 +556,34 @@ wi_ssi(wi_sess * sess)
    wrapper = sess->ws_filelist;
    ssitext = &wrapper->wf_data[wrapper->wf_nextbuf];
    ssifname = strstr(ssitext, "file=");
-   if(!ssifname)
-   {
+   if (!ssifname) {
       dtrap();
-      return WIE_FORMAT;
+      return WI_E_FORMAT;
    }
 
    ssifname += 5;    /* poinst past file=" text */
    paren = *ssifname++;
    endname = strchr(ssifname, paren);
-   if(!endname)   /* no terminating quote sign? */
-   {
+   if (!endname) { /* no terminating quote sign? */
       dtrap();
-      return WIE_FORMAT;
+      return WI_E_FORMAT;
    }
    *endname = 0;     /* ssifname (and optional name/value args) now a C string */
    pairs = strchr(ssifname, '?');
-   if(pairs)
-   {
+   if (pairs) {
       error = wi_buildform(sess, pairs + 1);  /* best effort... */
       *pairs = 0;
    }
    args = strchr(ssifname, ' ');
-   if(args)
-      *args = 0;
+   if (args) {
+	   *args = 0;
+   }
 
    error = wi_fopen(sess, ssifname, "r");
-   if(args)
-      *args = ' ';
-   if(error)
-   {
+   if (args) {
+	   *args = ' ';
+   }
+   if (error) {
       dtrap();       /* No SSI file? Probably a bug; Tell programmer */
       return error;
    }
@@ -633,33 +591,27 @@ wi_ssi(wi_sess * sess)
 #ifdef WI_EMBFILES
    /* See if the SSI file is a code-based embedded file */
    ssi = sess->ws_filelist;
-   if(ssi->wf_routines == &emfs)
-   {
+   if (ssi->wf_routines == &emfs) {
       EOFILE * eofile = (EOFILE*)ssi->wf_fd;
-      if(eofile->eo_emfile->em_flags & EMF_CEXP)
-      {
+      if (eofile->eo_emfile->em_flags & EMF_CEXP) {
          /* SSI is a CVAR - em_size is overloaded with the token */
          error = wi_cvariables(sess, eofile->eo_emfile->em_size);
-      }
-      else if(eofile->eo_emfile->em_flags & EMF_SSI)
-      {
+      } else if (eofile->eo_emfile->em_flags & EMF_SSI) {
          /* SSI is an EFS routine */
          SSI_ROUTINE *  ssifunc;
 
-         if(!eofile->eo_emfile->em_routine)
-         {
+         if (!eofile->eo_emfile->em_routine) {
             dtrap();
             return 0;
          }
          ssifunc = (SSI_ROUTINE*)eofile->eo_emfile->em_routine;
          ssifunc(sess, eofile);
-      }
-      else     /* "normal" EFS read */
+      } else { /* "normal" EFS read */
          return(wi_readfile(sess));
+      }
 
       /* If we layered on a form, release it now */
-      if(pairs && (sess->ws_formlist->next))
-      {
+      if (pairs && (sess->ws_formlist->next)) {
          wi_free(sess->ws_formlist);
          sess->ws_formlist = sess->ws_formlist->next;
       }
@@ -683,9 +635,7 @@ wi_ssi(wi_sess * sess)
  * Returns 0 if OK, else negative error code
  */
 
-int
-wi_exec(wi_sess * sess)
-{
+int wi_exec(wi_sess * sess) {
    char *   cp;
    char *   args;
    char     paren;
@@ -693,40 +643,37 @@ wi_exec(wi_sess * sess)
    int      len;
    wi_file *   fi;     /* info about current file */
 
-
    /* start loading file to return. */
    fi = sess->ws_filelist;
    len = fi->wf_nextbuf;
 
    cp = &fi->wf_data[len + 10];
-   if( strncmp(cp, "cmd_argument=", 13) != 0)
-   {
+   if ( strncmp(cp, "cmd_argument=", 13) != 0) {
       dtrap();
-      return WIE_FORMAT;
+      return WI_E_FORMAT;
    }
    cp += 13;
 
    /* see if there is an opening paren */
    paren = *cp;
-   if((paren != '\'') && (paren != '\"'))
-   {
+   if ((paren != '\'') && (paren != '\"')) {
       dtrap();
-      return WIE_FORMAT;
+      return WI_E_FORMAT;
    }
    args = cp + 1;
 
    /* Find closing paren and replace with null */
    cp = strchr(args, paren);
 
-   if(!cp)
-   {
+   if (!cp) {
       dtrap();
-      return WIE_FORMAT;
+      return WI_E_FORMAT;
    }
    *cp = 0;
 
-   if(wi_execfunc)
-      err = (*wi_execfunc)(sess, args);
+   if (wi_execfunc) {
+	   err = (*wi_execfunc)(sess, args);
+   }
 
    return err;
 }
@@ -758,9 +705,7 @@ const int pr2six[256]={
 
 #define BYTE unsigned char
 
-void
-wi_uudecode(unsigned char * bufcoded, unsigned char * pbuffdecoded)
-{
+void wi_uudecode(unsigned char * bufcoded, unsigned char * pbuffdecoded) {
     int              nbytesdecoded;
     unsigned char *  bufin;
     unsigned char *  bufout;
@@ -768,14 +713,14 @@ wi_uudecode(unsigned char * bufcoded, unsigned char * pbuffdecoded)
 
     /* Strip leading whitespace. */
 
-    while(*bufcoded==' ' || *bufcoded == '\t') bufcoded++;
+    while (*bufcoded==' ' || *bufcoded == '\t') bufcoded++;
 
     /* Figure out how many characters are in the input buffer.
      * If this would decode into more bytes than would fit into
      * the output buffer, adjust the number of input bytes downwards.
      */
     bufin = bufcoded;
-    while(pr2six[*(bufin++)] <= 63);
+    while (pr2six[*(bufin++)] <= 63);
     nprbytes = (int)(bufin - bufcoded - 1);
     nbytesdecoded = ((nprbytes+3)/4) * 3;
 
@@ -793,15 +738,15 @@ wi_uudecode(unsigned char * bufcoded, unsigned char * pbuffdecoded)
         nprbytes -= 4;
     }
 
-    if(nprbytes & 03) {
-        if(pr2six[bufin[-2]] > 63)
-            nbytesdecoded -= 2;
-        else
-            nbytesdecoded -= 1;
+    if (nprbytes & 03) {
+        if (pr2six[bufin[-2]] > 63) {
+        	nbytesdecoded -= 2;
+        } else {
+        	nbytesdecoded -= 1;
+        }
     }
 
     pbuffdecoded[nbytesdecoded] = '\0';
-
     return;
 }
 
@@ -818,26 +763,21 @@ wi_uudecode(unsigned char * bufcoded, unsigned char * pbuffdecoded)
  * Handles errors by returning null strings.
  */
 
-void
-wi_decode_auth(wi_sess * sess, char * name, int name_len, char * pass, int pass_len)
-{
+void wi_decode_auth(wi_sess * sess, char * name, int name_len, char * pass, int pass_len) {
    char *   authdata;
    char *   divide;
    char     decode[80];
 
    /* For now, just do basic auth */
-   if(wi_tagcmp(sess->ws_auth, "Basic") == 0)
-   {
+   if (wi_tagcmp(sess->ws_auth, "Basic") == 0) {
       authdata = sess->ws_auth + strlen("Basic ");
-      if(strlen(authdata) > sizeof(decode))
-      {
+      if (strlen(authdata) > sizeof(decode)) {
          dtrap();    // crude overflow test failed
          return;
       }
       wi_uudecode((u_char*)authdata, (u_char*)(&decode[0]));
       divide = strchr(decode, ':');
-      if(!divide)
-      {
+      if (!divide) {
          *name = 0;
          *pass = 0;
          return;
@@ -845,9 +785,7 @@ wi_decode_auth(wi_sess * sess, char * name, int name_len, char * pass, int pass_
       *divide++ = 0;    /* terminte name, point to password */
       strncpy(name, decode, name_len);
       strncpy(pass, divide, pass_len);
-   }
-   else  /* Add MD5 here later.... */
-   {
+   } else { /* Add MD5 here later.... */
       dtrap();    // Unsupported auth type
    }
    return;
