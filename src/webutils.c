@@ -339,18 +339,21 @@ char * wi_getline( char * linetype, char * httphdr ) {
  */
 
 char * wi_argterm( char * arg ) {
-   while (*arg > ' ' ) {
-	   arg++;
-   }
-   *(arg++) = 0;
-   while ((*arg <= ' ') && (*arg > 0)) {
-	   arg++;
-   }
-   if (*arg) {
-	   return arg;
-   } else {
-	   return NULL;
-   }
+	if (NULL == arg) {
+		return arg;
+	}
+	while (*arg > ' ' ) {
+		arg++;
+	}
+	*(arg++) = 0;
+	while ((*arg <= ' ') && (*arg > 0)) {
+		arg++;
+	}
+	if (*arg) {
+		return arg;
+	} else {
+		return NULL;
+	}
 }
 
 /* atocode() - return a code for a 2 byte hex calue */
