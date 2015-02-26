@@ -302,6 +302,24 @@ another_state:
    return sessions;
 }
 
+int wi_step() {
+	int ret = wi_poll();
+	if ( ret < 0 ) {
+    	   wi_sess *  sess;
+    	   wi_sess *  nextsess;
+           dtrap(); /* restart the server */
+           /* clean out everything */
+           closesocket(wi_listen);
+           for (sess = wi_sessions; sess; sess = nextsess) {
+               nextsess = sess->ws_next;
+               wi_delsess(sess);
+           }
+           TH_SLEEP(TPS);	/* give sockets time to close */
+           wi_init();     /* restart */
+	}
+	return ret;
+}
+
 #ifdef WI_USE_THREADS
 
 /* wi_thread() - entry point for driving webio from a single thread.  It
@@ -313,31 +331,14 @@ another_state:
  */
 
 int wi_thread() {
-   int   sessions = 0;
-   wi_sess *  sess;
-   wi_sess *  nextsess;
-
-   while (wi_running) {
-      sessions = wi_poll();
-      if ( sessions < 0 ) {
-         dtrap();    /* restart the server */
-          
-         /* clean out everything */
-         closesocket(wi_listen);
-         for (sess = wi_sessions; sess; sess = nextsess) {
-            nextsess = sess->ws_next;
-            wi_delsess(sess);
-         }
-         TH_SLEEP(TPS);	/* give sockets time to close */
-         wi_init();     /* restart */
-      }
-   }
-
-   return sessions;
+	int ret = 0;
+	while (wi_running) {
+		ret = wi_step();
+	}
+	return ret;
 }
 
-#endif  /* WI_USE_THREADS */
-
+#endif /* WI_USE_THREADS */
 
 int wi_sockaccept() {
    struct sockaddr_in sa;

@@ -214,8 +214,12 @@ extern    char *     wi_formvalue( wi_sess * sess, char * ctlname );
 extern    int        wi_formint(wi_sess * sess, char * name, long * return_int );
 extern    int        wi_formbool(wi_sess * sess, char * name);
 
+extern    int        wi_step();
+
+#ifdef WI_USE_THREADS
 /* Entry point for main (or only) thread in demo */
 extern    int        wi_thread(void);
+#endif /* WI_USE_THREADS */
 
 /* Optional "exec" routine */
 extern    int   (*wi_execfunc)(wi_sess * sess, char * args);
