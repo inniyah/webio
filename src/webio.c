@@ -535,16 +535,12 @@ int wi_parseheader( wi_sess * sess ) {
       int      admit;  /* 1 if OK, 0 if authentication fails */
 
       if (sess->ws_auth == NULL) { /* No auth info in http header */
-         admit = sess->ws_filelist->wf_routines->wfs_fauth(
-            sess->ws_filelist->wf_fd, "", "");
+         admit = sess->ws_filelist->wf_routines->wfs_fauth(sess->ws_filelist->wf_fd, "", "");
       } else { /* Have auth info, parse it and check */
          char name[32];
          char pass[32];
-
          wi_decode_auth(sess, name, sizeof(name), pass, sizeof(pass));
-
-         admit = sess->ws_filelist->wf_routines->wfs_fauth(
-            sess->ws_filelist->wf_fd, name, pass);
+         admit = sess->ws_filelist->wf_routines->wfs_fauth(sess->ws_filelist->wf_fd, name, pass);
       }
 
       if (!admit) {
@@ -591,9 +587,7 @@ void wi_badform(wi_sess * sess, char * errmsg) {
    wi_printf(sess, badformhead );
    wi_printf(sess, "Error in form: %s <br>", errmsg);
    wi_printf(sess, badformtail );
-
    wi_sockwrite(sess);
-
    return;
 }
 
@@ -635,8 +629,9 @@ int wi_readfile(struct wi_sess_s * sess) {
          char * errmsg;
 
          formhandler = emf->em_routine;
-         if (formhandler == NULL)
-            return WI_E_BADFILE;
+         if (formhandler == NULL) {
+        	 return WI_E_BADFILE;
+         }
 
          errmsg = formhandler(sess);
          if (errmsg) {
@@ -737,8 +732,9 @@ readmore:
 
       /* Make sure we have space for char in txbuf */
       if ((sess->ws_txbufs == NULL) || (sess->ws_txtail->tb_total >= WI_TXBUFSIZE)) {
-         if (wi_txalloc(sess) == NULL)
-            return WI_E_MEMORY;
+         if (wi_txalloc(sess) == NULL) {
+        	 return WI_E_MEMORY;
+         }
       }
       sess->ws_txtail->tb_data[sess->ws_txtail->tb_total++] = fi->wf_data[len];
    }
