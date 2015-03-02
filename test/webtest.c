@@ -40,8 +40,8 @@
 extern void exit(int code);
 
 /* Sample authentication code & "database" */
-static char test_name[32] = {"john"};
-static char test_passwd[32] = {"bartas"};
+static char test_name[32] = {"test"};
+static char test_passwd[32] = {"test"};
 int   wfs_auth(void * fd, char * name, char * password);
 
 u_long wi_cticks = 0;
