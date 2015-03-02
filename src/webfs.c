@@ -320,9 +320,9 @@ int em_fwrite(char * buf, unsigned size1, unsigned size2, void * fd) {
 
    dtrap();
 
-   USE_ARG(buf);
-   USE_ARG(size1);
-   USE_ARG(size2);
+   (void)buf;
+   (void)size1;
+   (void)size2;
    error = em_verify((EOFILE*)fd);
    if (error) {
 	   return error;

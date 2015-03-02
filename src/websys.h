@@ -77,9 +77,9 @@ extern u_long wi_cticks;
 
 #endif
 
-#else /* not LINUX  */
+#endif
 
-/* Windows (winsock) version */
+#ifdef WINDOWS
 
 #include <ctype.h>   /* for "isdigit()" */
 #include <stdio.h>
@@ -169,8 +169,8 @@ void wi_free_file_slot(struct wi_file_s * oldfile);
 
 /*********** debug support **************/
 
-extern   void     wi_dtrap();
-#define  dtrap()  wi_dtrap()
+extern void wi_dtrap();
+#define dtrap() wi_dtrap()
 
 #ifdef WI_USE_DPRINTF
 #define dprintf printf
@@ -179,10 +179,6 @@ extern   void     wi_dtrap();
 #endif
 
 #include <stdarg.h>
-
-#ifndef USE_ARG
-#define USE_ARG(c) (c=c)
-#endif  /* USE_ARG */
 
 void wi_panic(char * msg);
 

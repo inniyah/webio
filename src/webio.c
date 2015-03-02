@@ -868,7 +868,7 @@ int wi_redirect(wi_sess * sess, char * filename) {
 
 int wi_putfile( wi_sess * sess) {
    dtrap();
-   USE_ARG(sess);
+   (void)sess;
 
    return 0;      /* No Error */
 }

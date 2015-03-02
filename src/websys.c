@@ -59,7 +59,7 @@ char * wi_getdate(wi_sess * sess) {
    time_t      timeval;
    struct tm * gmt;
 
-   USE_ARG(sess);
+   (void)sess;
    timeval = time(NULL);
    gmt = gmtime(&timeval);
 
@@ -87,7 +87,7 @@ char * wi_getdate(wi_sess * sess) {
    time_t      timeval;
    struct tm * gmt;
 
-   USE_ARG(sess);
+   (void)sess;
    timeval = time(NULL);
    gmt = gmtime(&timeval);
 
