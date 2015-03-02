@@ -74,7 +74,7 @@ int wi_senderr(wi_sess * sess, int httpcode ) {
    /* Build a header */
    sprintf(hdrbuf, "HTTP/1.1 %d %s\r\n", httpcode, errortext);
    cp = hdrbuf + strlen(hdrbuf);
-   sprintf(cp, "Date: %s GMT\r\n", wi_getdate(sess) );
+   sprintf(cp, "Date: %s\r\n", wi_getdate(sess) );
    cp += strlen(cp);
    if (httpcode == 401) {
       sprintf(cp, "WWW-Authenticate: Basic realm=\"%s\"\r\n", sess->ws_uri );
@@ -116,7 +116,7 @@ int wi_replyhdr(wi_sess * sess, int contentlen) {
 
    sprintf(hdrbuf, "HTTP/1.1 200 OK\r\n");
    cp = hdrbuf + strlen(hdrbuf);
-   sprintf(cp, "Date: %s GMT\r\n", wi_getdate(sess) );
+   sprintf(cp, "Date: %s\r\n", wi_getdate(sess) );
    cp += strlen(cp);
    sprintf(cp, "Server: %s\r\n", wi_servername );
    cp += strlen(cp);
