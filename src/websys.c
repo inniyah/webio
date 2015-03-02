@@ -33,11 +33,11 @@
  */
 
 static char * day[] = 
-{   "Sun","Mon","Tues","Wed","Thurs","Fri","Sat"};
+{   "Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
 
 static char * month[] = 
-{  "Jan","Feb","March","April","May","June",
-   "July","Aug","Sept","Oct","Nov","Dec", 
+{  "Jan","Feb","Mar","Apr","May","Jun",
+   "Jul","Aug","Sep","Oct","Nov","Dec", 
 };
 
 #ifdef _WINSOCKAPI_
