@@ -160,9 +160,6 @@ void wi_free_file_slot(struct wi_file_s * oldfile);
 
 #endif
 
-#include <memory.h>
-#define MEMCPY(dest,src,size)    memcpy(dest,src,size)
-
 /*********** File system mapping ***************/
 
 #include <stdio.h>

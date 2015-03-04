@@ -28,6 +28,7 @@
 #include "webfs.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef LINUX
 #include <unistd.h>
@@ -416,6 +417,12 @@ int wi_parseheader( wi_sess * sess ) {
    char *   rxend;
    char *   pairs;
    u_long   cmd;
+
+   char *   uri;
+   char *   referer;
+   char *   auth;
+   char *   host;
+
    int      error;
 
    /* First find end of HTTP header */
@@ -463,18 +470,18 @@ int wi_parseheader( wi_sess * sess ) {
    }
    if (*cp == '/') {
       if (*(cp+1) == ' ') {
-    	  sess->ws_uri = wi_rootfile;
+    	  uri = wi_rootfile;
       } else {
-    	  sess->ws_uri = cp+1;    /* strip leading slash */
+    	  uri = cp+1;    /* strip leading slash */
       }
    } else {
-	   sess->ws_uri = cp;
+	   uri = cp;
    }
 
    /* Extract other useful fields from header  */
-   sess->ws_auth = wi_getline("Authorization:", cp);
-   sess->ws_referer = wi_getline("Referer:", cp);
-   sess->ws_host = wi_getline("Host:", cp);
+   auth = wi_getline("Authorization:", cp);
+   referer = wi_getline("Referer:", cp);
+   host = wi_getline("Host:", cp);
 
    cl = wi_getline("Content-Length:", cp);
    if (cl) {
@@ -503,18 +510,25 @@ int wi_parseheader( wi_sess * sess ) {
    }
 
    /* insert the null terminators in any strings in the rxbuf */
-   if ((sess->ws_uri > sess->ws_rxbuf) && (sess->ws_uri < rxend)) {
-	   wi_argterm(sess->ws_uri);      /* Null terminate the URI */
+   if ((uri > sess->ws_rxbuf) && (uri < rxend)) {
+	   wi_argterm(uri);      /* Null terminate the URI */
    }
-   if ((sess->ws_auth > sess->ws_rxbuf) && (sess->ws_auth < rxend)) {
-	   wi_argterm(sess->ws_auth);     /* etc */
+   sess->ws_uri = uri;
+
+   if ((auth > sess->ws_rxbuf) && (auth < rxend)) {
+	   wi_argterm(auth);     /* etc */
    }
-   if ((sess->ws_referer > sess->ws_rxbuf) && (sess->ws_referer < rxend)) {
-	   wi_argterm(sess->ws_referer);
+   sess->ws_auth = auth;
+
+   if ((referer > sess->ws_rxbuf) && (referer < rxend)) {
+	   wi_argterm(referer);
    }
-   if ((sess->ws_uri > sess->ws_host) && (sess->ws_host < rxend)) {
-	   wi_argterm(sess->ws_host);
+   sess->ws_referer = referer;
+
+   if ((host > sess->ws_rxbuf) && (host < rxend)) {
+	   wi_argterm(host);
    }
+   sess->ws_host = host;
 
    /* Find and open file to return, */
    error = wi_fopen(sess, sess->ws_uri, "rb");

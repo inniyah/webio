@@ -45,14 +45,14 @@ extern   wi_file * wi_allfiles;
 #define  WI_FILE   wi_file
 
 typedef struct wi_filesys_s {
-   WI_FILE *   (*wfs_fopen) (char * name, char * mode);
+   WI_FILE *   (*wfs_fopen) (const char * name, const char * mode);
    int         (*wfs_fread) (char * buf, unsigned size1, unsigned size2, void * fd);
    int         (*wfs_fwrite)(char * buf, unsigned size1, unsigned size2, void * fd);
    int         (*wfs_fclose)(void * fd);
    int         (*wfs_fseek) (void * fd, long offset, int mode);
    int         (*wfs_ftell) (void * fd);
-   int         (*wfs_fauth) (void * fd, char * name, char * pw);  /* Optional, for authentication */
-   int         (*wfs_push) (void * fd, wi_sess * sess);  /* Optional, server push */
+   int         (*wfs_fauth) (void * fd, const char * name, const char * pw);  /* Optional, for authentication */
+   int         (*wfs_push)  (void * fd, wi_sess * sess);  /* Optional, server push */
 } wi_filesys;
 
 
@@ -61,7 +61,7 @@ extern   wi_filesys *   wi_filesystems[];
 extern   wi_file *      wi_files;   /* list of open files */
 
 /* Top level file access routines. These just map to lower routines */
-extern   int      wi_fopen(wi_sess * sess, char * name, char * mode);
+extern   int      wi_fopen(wi_sess * sess,const char * name, const char * mode);
 extern   int      wi_fread(char * buf, unsigned size1, unsigned size2, void * fd);
 extern   int      wi_fwrite(char * buf, unsigned size1, unsigned size2, void * fd);
 extern   int      wi_fclose(WI_FILE * fd);
@@ -98,7 +98,7 @@ extern   em_file * emfiles;            /* master list of embedded files */
 #define     EMF_AUTH    0x0020         /* Accessing file requires auth. */
 #define     EMF_CEXP    0x0040         /* file just prints C expression. */
 
-extern   WI_FILE *   em_fopen(char * name, char * mode);
+extern   WI_FILE *   em_fopen(const char * name, const char * mode);
 extern   int         em_fread(char * buf, unsigned size1, unsigned size2, void * fd);
 extern   int         em_fwrite(char * buf, unsigned size1, unsigned size2, void * fd);
 extern   int         em_fclose(void * fd);

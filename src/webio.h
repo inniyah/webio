@@ -85,17 +85,18 @@ typedef struct wi_sess_s {
    txbuf *  ws_txbufs;              /* list of output buffers ready to send */
    txbuf *  ws_txtail;              /* last entry in ws_txbufs list */
 
-   char *   ws_uri;                 /* URI from request (often inside rxbuf) */
-   char *   ws_referer;             /* Referrer Information */
-   char *   ws_auth;
-   char *   ws_host;
+   const char * ws_uri;             /* URI from request (often inside rxbuf) */
+   const char * ws_referer;         /* Referrer Information */
+   const char * ws_auth;
+   const char * ws_host;
+
    struct wi_form_s * ws_formlist;  /* attached forms (once parsed) */
    struct wi_file_s * ws_filelist;  /* local files associated with session */
 
-   httpcmds ws_cmd;                 /* GET, POST, etc. */
-   int      ws_flags;
-   char *   ws_ftype;               /* Mime type (best guess) */
-   wi_sec   ws_last;                /* timetick of last activity */
+   httpcmds     ws_cmd;             /* GET, POST, etc. */
+   int          ws_flags;
+   const char * ws_ftype;           /* Mime type (best guess) */
+   wi_sec       ws_last;            /* timetick of last activity */
 } wi_sess;   
 
 

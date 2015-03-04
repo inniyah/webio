@@ -26,6 +26,8 @@
 #include "webio.h"
 #include "webfs.h"
 
+#include <string.h>
+
 #ifdef LINUX
 #include <unistd.h>
 #endif
@@ -41,15 +43,14 @@ int   (*wi_execfunc)(wi_sess * sess, char * args) = NULL;
 char * wi_servername = "Webio Embedded server v1.0";
 
 struct httperror {
-   int      errcode;
-   char *   errtext;
-} httperrors[] = 
-{
-   { 400,  "Bad HTTP request" },
-   { 401,  "Authentication required" },
-   { 402,  "Payment required" },
-   { 404,  "File not found" },
-   { 501,  "Server error" },
+	   int          errcode;
+	   const char * errtext;
+} httperrors[] = {
+	{ 400,  "Bad HTTP request" },
+	{ 401,  "Authentication required" },
+	{ 402,  "Payment required" },
+	{ 404,  "File not found" },
+	{ 501,  "Server error" },
 };
 
 /* wi_senderr()
@@ -60,9 +61,9 @@ struct httperror {
  */
 
 int wi_senderr(wi_sess * sess, int httpcode ) {
-   int      i;
-   char *   cp;
-   char *   errortext = "Unknown HTTP Error";
+   int            i;
+   char *         cp;
+   const char *   errortext = "Unknown HTTP Error";
 
    for (i = 0; i < (sizeof(httperrors)/sizeof(struct httperror)); i++) {
       if (httperrors[i].errcode == httpcode) {
@@ -277,7 +278,7 @@ int wi_argncpy(char * buf, char * arg, int size ) {
  * Returns 0 if tags match, -1 if not.
  */
 
-int wi_tagcmp(char * tag1, char * tag2) {
+int wi_tagcmp(const char * tag1, const char * tag2) {
    while (*tag1 > ' ') {
       if ((*tag1++ | 0x20) != (*tag2++ | 0x20))
          return -1;
@@ -487,23 +488,26 @@ int wi_buildform(wi_sess * sess, char * pairs) {
    return 0;
 }
 
+
+#define FT_ASCII     0x00
 #define FT_BINARY    0x01
 
 struct wi_ftype {
-   u_long   ext;        /* encoded 1st four chars of extension */
-   char *   mimetype;   /* Mime description */
-   int      flags;      /* bitmask of the FT_ flags */
-} wi_ftypes[] = 
-{
-   { 0x4A504700, "image/jpeg", FT_BINARY }, /* JPG */
-   { 0x4A504547, "image/jpeg", FT_BINARY }, /* JPEG */
-   { 0x504E4700, "image/png",  FT_BINARY }, /* PNG */
-   { 0x47494600, "image/gif",  FT_BINARY }, /* GIF */
-   { 0x57415600, "audio/wav", FT_BINARY }, /* WAV */
-   { 0x4D503300, "audio/mp3", FT_BINARY }, /* MP3 */
-   { 0x574D5600, "video/x-ms-wmv", FT_BINARY }, /* WMV */
-   { 0x50444600, "application/pdf", FT_BINARY }, /* PDF */
-   { 0x53574600, "application/x-shockwave-flash", FT_BINARY }, /* SWF */
+        u_long       ext;        /* encoded 1st four chars of extension */
+        const char * mimetype;   /* Mime description */
+        int          flags;      /* bitmask of the FT_ flags */
+} wi_ftypes[] = {
+    /* JPG */  { 0x4A504700, "image/jpeg",                    FT_BINARY },
+    /* JPEG */ { 0x4A504547, "image/jpeg",                    FT_BINARY },
+    /* PNG */  { 0x504E4700, "image/png",                     FT_BINARY },
+    /* GIF */  { 0x47494600, "image/gif",                     FT_BINARY },
+    /* WAV */  { 0x57415600, "audio/wav",                     FT_BINARY },
+    /* MP3 */  { 0x4D503300, "audio/mp3",                     FT_BINARY },
+    /* WMV */  { 0x574D5600, "video/x-ms-wmv",                FT_BINARY },
+    /* PDF */  { 0x50444600, "application/pdf",               FT_BINARY },
+    /* SWF */  { 0x53574600, "application/x-shockwave-flash", FT_BINARY },
+    /* BIN */  { 0x66494E00, "application/octet-binary",      FT_BINARY },
+    /* TXT */  { 0x54585400, "text/plain",                    FT_ASCII  }
 };
 
 
@@ -532,12 +536,12 @@ int wi_setftype(wi_sess * sess) {
    }
 
    /* see if the file is one of the binary types */
-   for (i = 0;i < sizeof(wi_ftypes)/sizeof(struct wi_ftype); i++) {
+   for (i = 0; i < sizeof(wi_ftypes)/sizeof(struct wi_ftype); i++) {
       if (wi_ftypes[i].ext == type) {
          if (wi_ftypes[i].flags & FT_BINARY) {
         	 sess->ws_flags |= WF_BINARY;
          }
-         sess->ws_ftype = wi_ftypes[i].mimetype;;
+         sess->ws_ftype = wi_ftypes[i].mimetype;
          return TRUE;
       }
    }
@@ -726,11 +730,11 @@ const int pr2six[256]={
 
 #define BYTE unsigned char
 
-void wi_uudecode(unsigned char * bufcoded, unsigned char * pbuffdecoded) {
-    int              nbytesdecoded;
-    unsigned char *  bufin;
-    unsigned char *  bufout;
-    int              nprbytes;
+void wi_uudecode(const unsigned char * bufcoded, unsigned char * pbuffdecoded) {
+    int                   nbytesdecoded;
+    const unsigned char * bufin;
+    unsigned char *       bufout;
+    int                   nprbytes;
 
     /* Strip leading whitespace. */
 
@@ -785,9 +789,9 @@ void wi_uudecode(unsigned char * bufcoded, unsigned char * pbuffdecoded) {
  */
 
 void wi_decode_auth(wi_sess * sess, char * name, int name_len, char * pass, int pass_len) {
-   char *   authdata;
-   char *   divide;
-   char     decode[80];
+   const char *   authdata;
+   char *         divide;
+   char           decode[80];
 
    /* For now, just do basic auth */
    if (wi_tagcmp(sess->ws_auth, "Basic") == 0) {
@@ -796,7 +800,7 @@ void wi_decode_auth(wi_sess * sess, char * name, int name_len, char * pass, int 
          dtrap();    // crude overflow test failed
          return;
       }
-      wi_uudecode((u_char*)authdata, (u_char*)(&decode[0]));
+      wi_uudecode((const u_char*)authdata, (u_char*)(&decode[0]));
       divide = strchr(decode, ':');
       if (!divide) {
          *name = 0;

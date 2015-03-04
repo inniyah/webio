@@ -28,21 +28,22 @@
  * program or an embedded system.
  */
 
-#include <stdio.h>
-
 #include "websys.h"
 #include "webio.h"
 #include "webfs.h"
 #include "wsfdata.h"
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern void exit(int code);
 
 /* Sample authentication code & "database" */
-static char test_name[32] = {"test"};
-static char test_passwd[32] = {"test"};
-int   wfs_auth(void * fd, char * name, char * password);
+static const char test_name[32] = {"test"};
+static const char test_passwd[32] = {"test"};
+
+int wfs_auth(void * fd, const char * name, const char * password);
 
 u_long wi_cticks = 0;
 
@@ -101,7 +102,7 @@ int main( int argc, char * argv[] ) {
 
 /* Return true if user gets access to the embedded file, 0 if not. */
 
-int wfs_auth(void * fd, char * name, char * password) {
+int wfs_auth(void * fd, const char * name, const char * password) {
 
    /* See if this file requires authentication. */
    EOFILE *    eofile;
@@ -111,10 +112,12 @@ int wfs_auth(void * fd, char * name, char * password) {
    emf = eofile->eo_emfile;
 
    if (emf->em_flags & EMF_AUTH) {
-      if (stricmp(name, test_name))
-         return 0;
-      if (stricmp(password, test_passwd))
-         return 0;
+      if (stricmp(name, test_name)) {
+    	  return 0;
+      }
+      if (stricmp(password, test_passwd)) {
+    	  return 0;
+      }
    }
    return 1;
 }

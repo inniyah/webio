@@ -27,6 +27,7 @@
 #include "webfs.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef LINUX
 #include <unistd.h>

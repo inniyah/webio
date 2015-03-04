@@ -27,6 +27,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <memory.h>
+#include <stdarg.h>
 
 static char output[DDB_SIZE];
 int ssi_threshhold = DDB_SIZE/2;
@@ -39,8 +41,9 @@ void wi_printf(wi_sess * sess, char * fmt, ...) {
    /* Since it's a huge pain to check the connection after each CGI write,
     * we may get sometimes handed a dying connection. Ignore these. 
     */
-   if (sess->ws_state == WI_ENDING)
-      return;
+   if (sess->ws_state == WI_ENDING) {
+	   return;
+   }
 
    /* Try to make sure we won't overflow the print buffer */
    len = strlen(fmt);
@@ -75,8 +78,7 @@ void wi_printf(wi_sess * sess, char * fmt, ...) {
          return;
    }
 
-   MEMCPY( &sess->ws_txtail->tb_data[sess->ws_txtail->tb_total],
-      output, len);
+   memcpy( &sess->ws_txtail->tb_data[sess->ws_txtail->tb_total], output, len);
    sess->ws_txtail->tb_total += len;
    return;
 }

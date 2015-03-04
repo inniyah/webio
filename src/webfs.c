@@ -26,6 +26,7 @@
 #include "webio.h"
 #include "webfs.h"
 
+#include <string.h>
 
 /* This file contins webio file access routines. The external "wi_f" entry 
  * points have the same semantics as C buffered file IO (fopen, etc). These 
@@ -36,12 +37,12 @@
 #ifdef WI_USE_STDFILES
 /* Voiding these pointers is ugly, but so are the Linux declarations. */
 wi_filesys sysfs = {
-   (void*)fopen,
-   (void*)fread,
-   (void*)fwrite,
-   (void*)fclose,
-   (void*)fseek,
-   (void*)ftell,
+	.wfs_fopen  = em_fopen,
+	.wfs_fread  = em_fread,
+	.wfs_fwrite = em_fwrite,
+	.wfs_fclose = em_fclose,
+	.wfs_fseek  = em_fseek,
+	.wfs_ftell  = em_ftell
 };
 #endif   /* WI_USE_STDFILES */
 
@@ -80,7 +81,7 @@ wi_file *      wi_allfiles;   /* list of all open files */
  * 
  */
 
-int wi_fopen(wi_sess * sess, char * name, char * mode) {
+int wi_fopen(wi_sess * sess, const char * name, const char * mode) {
    wi_filesys *   fsys;    /* File system which has the file */
    wi_file *      newfile; /* transient file structrure */
    void *         fd;      /* descriptior from fs */
@@ -234,10 +235,10 @@ void wi_free_eofile_slot(EOFILE * oldfile) {
 }
 #endif
 
-WI_FILE * em_fopen(char * name, char * mode) {
-   em_file *   emf;
-   EOFILE *    eofile;
-   char *      cmpname = name;
+WI_FILE * em_fopen(const char * name, const char * mode) {
+   em_file *    emf;
+   EOFILE *     eofile;
+   const char * cmpname = name;
 
    /* Search the efs a name matching the one passed. */
    for (emf = emfiles; emf; emf = emf->em_next) {
@@ -374,8 +375,9 @@ int em_fseek(void * fd, long offset, int mode) {
 
    emf = (EOFILE *)fd;
    error = em_verify(emf);
-   if (error)
-      return error;
+   if (error)  {
+	   return error;
+   }
 
    /* Get file size into local variable */
    size = emf->eo_emfile->em_size;
