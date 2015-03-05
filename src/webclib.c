@@ -221,8 +221,8 @@ int wi_formbool(wi_sess * sess, char * name) {
       return 0;   /* Default: FALSE */
    }
 
-   if ( (((*valuetext) & 0x20) == 'y') || /* Yes */
-        (((*valuetext) & 0x20) == 't') || /* True */
+   if ( (((*valuetext) | 0x20) == 'y') || /* Yes */
+        (((*valuetext) | 0x20) == 't') || /* True */
         (*valuetext == 'c') /* Checked */
    ) {
       return TRUE;
