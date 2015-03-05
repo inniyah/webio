@@ -77,15 +77,13 @@ extern   int         wi_movebinary(wi_sess * sess, wi_file * fi);
 /***************** Optional embedded FS starts here *****************/
 #ifdef WI_USE_EMBFILES
 
-#define EM_FILENAMELEN  32
-
-typedef struct em_file_s { /* embedded file */
-   struct   em_file_s * em_next;       /* emfiles list link */
-   char     em_name[EM_FILENAMELEN];   /* name of file */
-   u_char * em_data;                   /* Actual data, if any */
-   int      em_size;                   /* length of em_data in bytes */
-   void *   em_routine;                /* SSI or CGI routine */
-   int      em_flags;                  /* bitmask of the EMF_ flags */
+typedef struct em_file_s {             /* embedded file */
+   struct em_file_s *    em_next;      /* emfiles list link */
+   const char *          em_name;      /* name of file */
+   const unsigned char * em_data;      /* Actual data, if any */
+   int                   em_size;      /* length of em_data in bytes */
+   void *                em_routine;   /* SSI or CGI routine */
+   int                   em_flags;     /* bitmask of the EMF_ flags */
 } em_file;
 
 extern   em_file * emfiles;            /* master list of embedded files */

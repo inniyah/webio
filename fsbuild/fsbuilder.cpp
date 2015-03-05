@@ -28,6 +28,11 @@
 #include <memory.h>
 #include <string.h>
 
+#define CHAR "char"
+#define BYTE "unsigned char"
+#define SINT "int"
+#define UINT "unsigned int"
+
 #ifdef __GNUC__
 #define stricmp strcasecmp
 #endif /* LINUX */
@@ -58,7 +63,7 @@ char  listfilename[NAMELENGTH];
 
 // Default output files 
 char  def_datafile[NAMELENGTH] = {"wsfdata.c"};
-char  def_hdrfile[NAMELENGTH] = {"wsfdata.h"};
+char  def_hdrfile[NAMELENGTH]  = {"wsfdata.h"};
 char  def_codefile[NAMELENGTH] = {"wsfcode.c"};
 
 // filedata->opmask values
@@ -72,10 +77,10 @@ char  def_codefile[NAMELENGTH] = {"wsfcode.c"};
 
 
 // Default option mask
-long  def_mask = 0;
+long def_mask = 0;
 
 
-int      infiles = 0;   // total number of input files 
+int infiles = 0; // total number of input files 
 
 /* all purpose buffer for file reading */
 unsigned char  readbuf[4096];
@@ -145,10 +150,10 @@ int tagcmp(const char * tag1, const char * tag2) {
    while (*tag1 > ' ') {
       // if tag ended return true
       if ((*tag1 == '>') ||
-    	         (*tag1 == '\'') ||
-    	         (*tag1 == '\r') ||
-    	         (*tag1 == 0)    ||
-    	         (*tag1 == '"')
+                (*tag1 == '\'') ||
+                (*tag1 == '\r') ||
+                (*tag1 == '\0') ||
+                (*tag1 == '"' )
       ) {
           return TRUE;
       }
@@ -250,11 +255,11 @@ char * get_tagparm(const char * parm, const char * html, char * dest) {
    // copy parameter value into buffer
    for (i = 0; i < TAGSIZE; i++) {
       if ((*cp == ' ') ||
-    	         (*cp == '\n') ||
-    	         (*cp == '\r') ||
-    	         (*cp == 0   ) ||
-    	         (*cp == '\'') ||
-    	         (*cp == '"')
+                (*cp == '\n') ||
+                (*cp == '\r') ||
+                (*cp == '\0') ||
+                (*cp == '\'') ||
+                (*cp == '"' )
       ) {
           break;
       }
@@ -265,7 +270,7 @@ char * get_tagparm(const char * parm, const char * html, char * dest) {
    if (i >= (TAGSIZE - 1)) {
 	   return NULL;
    } else {
-	   *dest = 0;
+	   *dest = '\0';
    }
 
    return dest;
@@ -566,39 +571,42 @@ int opt_makefunc(struct option * opt, char * parm) {
  * convert passed string into a unique token for switch/case statement
  */
 
-char tokenbuf[NAMELENGTH + 9];
+#define VARS_PREFIX "WI_EFS_"
 
+char tokenbuf[NAMELENGTH + 9 + sizeof(VARS_PREFIX)];
 
 enum caseparms { UPPERCASE, LOWERCASE, NOCASE};
 
-char * maketoken(char * name, unsigned number, enum caseparms caseparm) {
-   int   length = 0;
-
+char * maketoken(const char * prefix, const char * name, unsigned number, enum caseparms caseparm) {
+   int length = 0;
+   if ((NULL != prefix) && ('\0' != prefix)) {
+       strcpy(tokenbuf, prefix);
+       length += strlen(prefix);
+   }
    while (*name && (length < NAMELENGTH)) {
       if ((*name >= 'a') && (*name <= 'z')) {
          if (caseparm == UPPERCASE) {
-        	 tokenbuf[length++] = (*name) & ~0x20;
+             tokenbuf[length++] = (*name) & ~0x20;
          } else {
-        	 tokenbuf[length++] = *name;
+             tokenbuf[length++] = *name;
          }
       } else if ((*name >= 'A') && (*name <= 'Z')) {
          if (caseparm == LOWERCASE) {
-        	 tokenbuf[length++] = (*name) | 0x20;
+             tokenbuf[length++] = (*name) | 0x20;
          } else {
-        	 tokenbuf[length++] = *name;
+             tokenbuf[length++] = *name;
          }
       } else if ((*name >= '0') && (*name <= '9')) {
-    	  tokenbuf[length++] = *name;
+          tokenbuf[length++] = *name;
       } else {
-    	  tokenbuf[length++] = '_';
+          tokenbuf[length++] = '_';
       }
-
       name++;
    }
-   if (number != 0) {
-	   sprintf(&tokenbuf[length], "%u", number);
+   if ((number != 0) && (caseparm != UPPERCASE)) {
+       sprintf(&tokenbuf[length], "%u", number);
    } else {
-	   tokenbuf[length] = 0;
+       tokenbuf[length] = '\0';
    }
 
    return tokenbuf;
@@ -624,19 +632,20 @@ int opt_setcexp(struct option * opt, char * parm) {
       app_exit(-1);
    }
 
-   sprintf(codebuf, "   case %s:\n", maketoken(file->filename, file->filenumber, UPPERCASE) );
+   sprintf(codebuf, "\t\tcase %s:\n", maketoken(VARS_PREFIX, file->filename, file->filenumber, UPPERCASE) );
    cp = &codebuf[ strlen(codebuf) ];
 
    if (strncmp(ctype, "u_long", 6) == 0) {
-      sprintf(cp, "      e = wi_putlong(sess, (u_long)(%s));", code);
+      sprintf(cp, "\t\t\te = wi_putlong(sess, (" UINT ")(%s));", code);
    } else if (strncmp(ctype, "int", 3) == 0) {
-      sprintf(cp, "      e = wi_putlong(sess, (int)(%s));", code);
+      sprintf(cp, "\t\t\te = wi_putlong(sess, (" SINT ")(%s));", code);
    } else if (strncmp(ctype, "char*", 3) == 0) {
-      sprintf(cp, "      e = wi_putstring(sess, (char*)(%s));", code);
+      sprintf(cp, "\t\t\te = wi_putstring(sess, (" CHAR "*)(%s));", code);
    } else {
       printf("Unhandled C type in expression: %s\n", parm);
       app_exit(-1);
    }
+
 
    file->ccode = codebuf;  /* Save for output pass */
    option->opmask |= opt->opt_maskbit;
@@ -930,7 +939,7 @@ int bldform(filedata * newfile, FILE * outcode) {
    // printf the beginning of a form stub routine
    fprintf(outcode, "/* %s\n * Stub routine for form processing\n * \n", newfile->opset.routine);
    fprintf(outcode, " * Returns NULL if OK, else short error text\n */\n\n");
-   fprintf(outcode, "char *\n%s(wi_sess * sess, EOFILE * eofile)\n{\n", newfile->opset.routine);
+   fprintf(outcode, "const " CHAR " *\n%s(wi_sess * sess, EOFILE * eofile)\n{\n", newfile->opset.routine);
 
    // look the file up in the forms list
    for (formp = formlist; formp; formp = formp->next) {
@@ -951,7 +960,7 @@ int bldform(filedata * newfile, FILE * outcode) {
                  newfile->filename, listfilename, newfile->in_line);
           }
        }
-       fprintf(outcode, "\n   return NULL;      /*  OK return */\n}\n\n\n");
+       fprintf(outcode, "\n\treturn NULL; /* OK return */\n}\n\n\n");
        return 1;   // warning return code
    }
 
@@ -968,14 +977,14 @@ int bldform(filedata * newfile, FILE * outcode) {
          }
 
          // convert name to a C expression
-         maketoken(ctl->name, 0, LOWERCASE);
+         maketoken("", ctl->name, 0, LOWERCASE);
 
          if (i == 0) {
-        	 fprintf(outcode, "   char *   %s;\n", ctl->name);
+             fprintf(outcode, "\tconst " CHAR " * %s;\n", ctl->name);
          } else {
-            fprintf(outcode, "   %s = wi_formvalue(sess, \"%s\");", 
+            fprintf(outcode, "\t%s = wi_formvalue(sess, \"%s\");",
                ctl->name, ctl->name);
-            fprintf(outcode, "   /* default: %s */\n", ctl->value);
+            fprintf(outcode, "\t/* default: %s */\n", ctl->value);
          }
       }
       fprintf(outcode, "\n");
@@ -984,8 +993,8 @@ int bldform(filedata * newfile, FILE * outcode) {
    // Mark the form as having C code generated
    formp->flags |= FF_CCODED;
 
-   fprintf(outcode, "\n   /* Add your code here */\n\n");
-   fprintf(outcode, "   return 0;\n}\n\n\n");
+   fprintf(outcode, "\t/* Add your code here */\n\n");
+   fprintf(outcode, "\treturn NULL;\n}\n\n\n");
    return 0;   // OK return code
 }
 
@@ -1063,8 +1072,8 @@ int main(int argc, char * argv[]) {
       // skip commants and blank lines
       if ((readbuf[0] == '\n') ||
     	         (readbuf[0] == '\r') ||
-    	         (readbuf[0] == 0)    ||
-    	         (readbuf[0] == '#')
+    	         (readbuf[0] == '\0')    ||
+    	         (readbuf[0] == '#' )
       ) {
           continue;
       }
@@ -1138,7 +1147,7 @@ int main(int argc, char * argv[]) {
          mk_cname(newfile);
 
          /* Read input file and write to outdata as C char array */
-         fprintf(outdata, "unsigned char %s[] = {\n", newfile->caname );
+         fprintf(outdata, "const " BYTE " %s[] = {\n", newfile->caname );
          while ((length = fread(readbuf, 1, sizeof(readbuf), indata)) > 0) {
             for (i = 0; i < length; i++) {
                cp = (char *)(&readbuf[i]);
@@ -1151,7 +1160,7 @@ int main(int argc, char * argv[]) {
                if (*cp == '<') {
                   if ( tagcmp("<form", cp) == TRUE) {
                       if (currentform) {
-                          printf("Warnig: nested form, %s line %d\n", newfile->filename, indata_line);
+                          printf("Warning: nested form, %s line %d\n", newfile->filename, indata_line);
                       }
                      currentform = newform(cp, sizeof(readbuf) - i, newfile, indata_line);
                   } else if ( tagcmp("</form", cp) == TRUE) {
@@ -1194,7 +1203,7 @@ int main(int argc, char * argv[]) {
          }
          fprintf(outdata, "\n};\n\n" );
 
-         fprintf(outheader, "extern  unsigned char %s[%ld];\n", newfile->caname, newfile->casize );
+         fprintf(outheader, "extern const " BYTE " %s[%ld];\n", newfile->caname, newfile->casize );
       }
    }
 
@@ -1227,88 +1236,88 @@ int main(int argc, char * argv[]) {
 
       // count files with C code strings attached
       if (newfile->ccode) {
-    	  ccodes++;
+          ccodes++;
       }
 
       if (newfile->next) {
-    	  fprintf(outdata, "{	&efslist[%d],   /* list link */\n", efloop);
+          fprintf(outdata, "{\t&efslist[%d], /* list link */\n", efloop);
       } else {
-    	  fprintf(outdata, "{	NULL,   /* list link */\n");
+          fprintf(outdata, "{\tNULL, /* list link */\n");
       }
 
-      fprintf(outdata, "	\"%s\",   /* name of file */\n", newfile->filename);
+      fprintf(outdata, "\t\"%s\", /* name of file */\n", newfile->filename);
 
       /* Figure out what kind of EFS entry to make based on option bits */
       if (newfile->opset.opmask & (OPT_SSI|OPT_PUSH|OPT_CEXP|OPT_FORM)) {
-         fprintf(outdata, "   NULL,	     /* name of data array */\n");
+         fprintf(outdata, "\tNULL, /* name of data array */\n");
          if (newfile->opset.opmask & (OPT_SSI|OPT_PUSH|OPT_FORM)) {
-            fprintf(outdata, "   0,	        /* length of original file data */\n");
-            fprintf(outdata, "   %s,	     /* SSI/CGI data routine */\n", newfile->opset.routine );
+            fprintf(outdata, "\t0, /* length of original file data */\n");
+            fprintf(outdata, "\t%s, /* SSI/CGI data routine */\n", newfile->opset.routine );
 
             if (newfile->opset.opmask & OPT_FORM) {
-               fprintf(outheader, "\nchar *  %s(wi_sess * sess, EOFILE * eofile);\n", newfile->opset.routine );
+               fprintf(outheader, "\nconst " CHAR " * %s(wi_sess * sess, EOFILE * eofile);\n", newfile->opset.routine );
             } else {
-               fprintf(outheader, "\nint     %s(wi_sess * sess, EOFILE * eofile);\n", newfile->opset.routine );
+               fprintf(outheader, "\n" SINT " %s(wi_sess * sess, EOFILE * eofile);\n", newfile->opset.routine );
             }
 
             if (newfile->opset.opmask & (OPT_SSI|OPT_PUSH)) {
-               fprintf(outcode, "\n/* %s()\n *\n * %s routine stub\n */\n\n", 
+               fprintf(outcode, "\n/* %s()\n *\n * %s routine stub\n */\n\n",
                   newfile->opset.routine,
-				  (newfile->opset.opmask & OPT_SSI)?"SSI":"PUSH" );
+                  (newfile->opset.opmask & OPT_SSI)?"SSI":"PUSH" );
 
-               fprintf(outcode, "int\n%s(wi_sess * sess, EOFILE * eofile)\n", newfile->opset.routine);
+               fprintf(outcode, SINT "\n%s(wi_sess * sess, EOFILE * eofile)\n", newfile->opset.routine);
 
-               fprintf(outcode, "{\n   /* Add your code here */\n   return 0;\n}\n\n\n");
+               fprintf(outcode, "{\n\t/* Add your code here */\n\treturn 0;\n}\n\n\n");
             } else if (newfile->opset.opmask & OPT_FORM) {
-               /* This file is just a virtual form handler, so try to create 
-                * a form handling routine stub. 
+               /* This file is just a virtual form handler, so try to create
+                * a form handling routine stub.
                 */
                bldform(newfile, outcode);
             }
          } else { /* It's C expression - handled below */
-            fprintf(outdata, "   %s,	     /* overload length w/ token */\n",
-               maketoken(newfile->filename, newfile->filenumber, UPPERCASE) );
-            fprintf(outdata, "   NULL,	     /* SSI/CGI data routine */\n");
+            fprintf(outdata, "\t%s, /* overload length w/ token */\n", maketoken(VARS_PREFIX, newfile->filename, newfile->filenumber, UPPERCASE) );
+            fprintf(outdata, "\tNULL, /* SSI/CGI data routine */\n");
          }
       } else {
-         fprintf(outdata, "   %s,   /* C data array */\n", newfile->caname);
-         fprintf(outdata, "   %lu,        /* length of original file data */\n", newfile->casize );
-         fprintf(outdata, "   NULL,        /* SSI/CGI data routine */\n");
+         fprintf(outdata, "\t%s, /* C data array */\n", newfile->caname);
+         fprintf(outdata, "\t%lu, /* length of original file data */\n", newfile->casize );
+         fprintf(outdata, "\tNULL, /* SSI/CGI data routine */\n");
       }
 
       memset(emfflags, 0, sizeof(emfflags));
       if (newfile->opset.opmask & OPT_SSI) {
-    	  strcat(emfflags, "EMF_SSI | ");
+          strcat(emfflags, "EMF_SSI | ");
       }
       if (newfile->opset.opmask & OPT_PUSH) {
-    	  strcat(emfflags, "EMF_PUSH | ");
+          strcat(emfflags, "EMF_PUSH | ");
       }
       if (newfile->opset.opmask & OPT_CEXP) {
-    	  strcat(emfflags, "EMF_CEXP | ");
+          strcat(emfflags, "EMF_CEXP | ");
       }
       if (newfile->opset.opmask & OPT_AUTH) {
-    	  strcat(emfflags, "EMF_AUTH | ");
+          strcat(emfflags, "EMF_AUTH | ");
       }
       if (newfile->opset.opmask & OPT_FORM) {
-    	  strcat(emfflags, "EMF_FORM | ");
-      }
-            
-      if (strlen(emfflags) == 0) {
-    	  strcat(emfflags, "0x0000");
-      } else {
-    	  emfflags[strlen(emfflags) - 2] = 0; // step on trailing '|'
+          strcat(emfflags, "EMF_FORM | ");
       }
 
-      fprintf(outdata, "	(%s),	/* flags  */\n},\n", emfflags);
+      if (strlen(emfflags) == 0) {
+          strcat(emfflags, "0x0000");
+      } else {
+          emfflags[strlen(emfflags) - 2] = 0; // step on trailing '|'
+      }
+
+      fprintf(outdata, "	(%s), /* flags  */\n},\n", emfflags);
    }
    fprintf(outdata, "};\n\n");
 
 
    /* Build a switch statement in the output file to handle any C vars */
    if (ccodes) {
-      fprintf(outcode, "int\nwi_cvariables(wi_sess * sess, int token)\n{\n");
-      fprintf(outcode, "   int   e;\n\n   switch(token)\n   {\n");
+      fprintf(outcode, SINT "\nwi_cvariables(wi_sess * sess, " SINT " token)\n{\n");
+      fprintf(outcode, "\t" SINT " e;\n\n\tswitch(token)\n\t{\n");
       fprintf(outheader, "\n\n");
+
 
       /* Pass to make the C expression code */
       efloop = 0;
@@ -1318,15 +1327,15 @@ int main(int argc, char * argv[]) {
          if (newfile->ccode == NULL) {
         	 continue;
          }
-         fprintf(outcode, "%s\n      break;\n", newfile->ccode);
+         fprintf(outcode, "%s\n\t\t\tbreak;\n", newfile->ccode);
 
          fprintf(outheader, "#define %s %u\n",
-                 maketoken(newfile->filename, newfile->filenumber, UPPERCASE),
+                 maketoken(VARS_PREFIX, newfile->filename, newfile->filenumber, UPPERCASE),
                  newfile->filenumber
          );
       }
-      fprintf(outcode, "   default:\n      e = WI_E_BADPARM;\n      break;\n");
-      fprintf(outcode, "   }\n   return e;\n}\n\n");
+      fprintf(outcode, "\t\tdefault:\n\t\t\te = WI_E_BADPARM;\n\t\t\tbreak;\n");
+      fprintf(outcode, "\t}\n\treturn e;\n}\n\n");
       fprintf(outheader, "\n\n");
    }
 

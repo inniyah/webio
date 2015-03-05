@@ -834,7 +834,33 @@ int wi_sockwrite(wi_sess * sess) {
  * 
  */
 
-int wi_redirect(wi_sess * sess, char * filename) {
+int wi_redirect(wi_sess * sess, const char * filename) {
+   int      error;
+
+   sess->ws_referer = sess->ws_uri;
+   sess->ws_uri = filename;
+   sess->ws_last = wi_cticks;
+
+   /* unlink the completed form file from the session */
+   sess->ws_filelist = sess->ws_filelist->wf_next;
+
+   /* Find and open new file to return, */
+   error = wi_fopen(sess, filename, "rb");
+   if (error) {
+      wi_senderr(sess, 404); /* File not found */
+      return error;
+   }
+
+   sess->ws_state = WI_CONTENT;
+   sess->ws_cmd = H_GET;
+//   sess->ws_last = wi_cticks;
+   sess->ws_flags &= ~WF_HEADERSENT;
+
+   return 0;   /* OK return */
+}
+
+
+int wi_redirect_get(wi_sess * sess, char * filename) {
    int      error;
    char *   pairs;
 
@@ -842,7 +868,7 @@ int wi_redirect(wi_sess * sess, char * filename) {
    sess->ws_uri = filename;
    sess->ws_last = wi_cticks;
 
-   /* unlink the completed form file fron the session */
+   /* unlink the completed form file from the session */
    sess->ws_filelist = sess->ws_filelist->wf_next;
 
    /* parse any name/value pairs appended to file name */

@@ -208,22 +208,23 @@ extern   int         wi_exec(wi_sess * sess);
 extern   int         wi_putlong(wi_sess * sess, u_long value);
 extern   int         wi_putstring(wi_sess * sess, char * string);
 extern   int         wi_cvariables(wi_sess * sess, int token);
-extern   int         wi_redirect(wi_sess * sess, char * filename);
+extern   int         wi_redirect(wi_sess * sess, const char * filename);
+extern   int         wi_redirect_get(wi_sess * sess, char * filename);
 extern   void        wi_decode_auth(wi_sess * sess, char * name, int name_len, char * pass, int pass_len);
-extern    char *     wi_formipaddr( wi_sess * sess, char * ipname, u_long * ipaddr);
-extern    char *     wi_formvalue( wi_sess * sess, char * ctlname );
-extern    int        wi_formint(wi_sess * sess, char * name, long * return_int );
-extern    int        wi_formbool(wi_sess * sess, char * name);
+extern   char *      wi_formipaddr( wi_sess * sess, char * ipname, u_long * ipaddr);
+extern   char *      wi_formvalue( wi_sess * sess, char * ctlname );
+extern   int         wi_formint(wi_sess * sess, char * name, long * return_int );
+extern   int         wi_formbool(wi_sess * sess, char * name);
 
-extern    int        wi_step();
+extern   int         wi_step();
 
 #ifdef WI_USE_THREADS
 /* Entry point for main (or only) thread in demo */
-extern    int        wi_thread(void);
+extern   int         wi_thread(void);
 #endif /* WI_USE_THREADS */
 
 /* Optional "exec" routine */
-extern    int   (*wi_execfunc)(wi_sess * sess, char * args);
+extern   int         (*wi_execfunc)(wi_sess * sess, char * args);
 
 #endif   /* _WEBIO_H_ */
 

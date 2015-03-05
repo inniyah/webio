@@ -154,17 +154,18 @@ int memory_ssi(wi_sess * sess, EOFILE * eofile) {
    return 0;      /* OK return code */
 }
 
-int wi_cvariables(wi_sess * sess, int token){
-   int e = 0;
-
-   switch(token) {
-   case MEMHITS_VAR5:
-		  e = wi_putlong(sess, (u_long)(wi_totalblocks));
-		  break;
-   }
-   return e;
+int wi_cvariables(wi_sess * sess, int token) {
+	int e;
+	switch(token) {
+		case WI_EFS_MEMHITS_VAR:
+			e = wi_putlong(sess, (unsigned int)(wi_totalblocks));
+			break;
+		default:
+			e = WI_E_BADPARM;
+			break;
+	}
+	return e;
 }
-
 
 /* testaction_cgi
  * Stub routine for form processing
@@ -172,18 +173,18 @@ int wi_cvariables(wi_sess * sess, int token){
  * Returns 0 if OK,else negative error code
  */
 
-char * testaction_cgi(wi_sess * sess,  EOFILE * eofile) {
-   char *   your_name;
-   your_name = wi_formvalue(sess, "your_name");   /* default: John */
-   (void)your_name;
+const char * testaction_cgi(wi_sess * sess, EOFILE * eofile) {
+	const char * your_name;
+	your_name = wi_formvalue(sess, "your_name");	/* default: John */
+	(void)your_name;
 
-   dprintf("testaction.cgi: your_name=%s\n", your_name);
+	dprintf("testaction.cgi: your_name=%s\n", your_name);
 
-   if ( wi_redirect(sess, "index.html") ) {
-	   	return("redir failed");
-   } else {
-	   	return NULL;
-   }
+	if ( wi_redirect(sess, "index.html") ) {
+		return("redir failed");
+	} else {
+		return NULL;
+	}
 }
 
 /* PUSH
