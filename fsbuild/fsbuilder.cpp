@@ -6,14 +6,14 @@
  * All rights reserved.
  *
  * Use license: Modified from standard BSD license.
- * 
+ *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation, advertising 
+ * duplicated in all such forms and that any documentation, advertising
  * materials, Web server pages, and other materials related to such
  * distribution and use acknowledge that the software was developed
- * by John Bartas. The name "John Bartas" may not be used to 
- * endorse or promote products derived from this software without 
+ * by John Bartas. The name "John Bartas" may not be used to
+ * endorse or promote products derived from this software without
  * specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
@@ -28,29 +28,23 @@
 #include <memory.h>
 #include <string.h>
 
-#define CHAR "char"
-#define BYTE "unsigned char"
-#define SINT "int"
-#define UINT "unsigned int"
-
 #ifdef __GNUC__
 #define stricmp strcasecmp
 #endif /* LINUX */
 
-#ifdef _WIN32
-#pragma warning(disable: 4996 )	/* disable some Microsoft C++ nagware */
-#endif
-
-/* This file contains a standalone application to open multiple 
- * web content files and convert them into "C" language data 
+/* This file contains a standalone application to open multiple
+ * web content files and convert them into "C" language data
  * arrays. These arrays can be compiled into a webio file server
- * for use as an Embedded File System (EFS). The EFS files may 
- * also contain a pointer to a C function intead of data - The 
- * webio server will call these functions when the file in 
- * invoked, and the functions will then provide dynamic content. 
+ * for use as an Embedded File System (EFS). The EFS files may
+ * also contain a pointer to a C function intead of data - The
+ * webio server will call these functions when the file in
+ * invoked, and the functions will then provide dynamic content.
  */
 
-
+#define CHAR "char"
+#define BYTE "uint8_t"
+#define UINT "uint32_t"
+#define SINT "int32_t"
 
 /* option values for each input file */
 
@@ -61,7 +55,7 @@
 /* input file (must be specified) */
 char  listfilename[NAMELENGTH];
 
-// Default output files 
+// Default output files
 char  def_datafile[NAMELENGTH] = {"wsfdata.c"};
 char  def_hdrfile[NAMELENGTH]  = {"wsfdata.h"};
 char  def_codefile[NAMELENGTH] = {"wsfcode.c"};
@@ -77,10 +71,10 @@ char  def_codefile[NAMELENGTH] = {"wsfcode.c"};
 
 
 // Default option mask
-long def_mask = 0;
+long  def_mask = 0;
 
 
-int infiles = 0; // total number of input files 
+int      infiles = 0;   // total number of input files
 
 /* all purpose buffer for file reading */
 unsigned char  readbuf[4096];
@@ -116,7 +110,7 @@ int argcpy(char * dest, char * src, int maxlength ) {
 
    while (*src > ' ') {
       if (length++ > maxlength) {
-    	  return -1;
+          return -1;
       }
 
       *dest++ = *src++;
@@ -130,11 +124,11 @@ int argcmp(char * dest, char * src, int maxlength ) {
 
    while (*src > ' ') {
       if (length++ > maxlength) {
-    	  return -1;
+          return -1;
       }
 
       if (*dest++ != *src++) {
-    	  return -1;
+          return -1;
       }
    }
    return 0;
@@ -142,25 +136,25 @@ int argcmp(char * dest, char * src, int maxlength ) {
 
 /* tagcmp(char * tag1, char * tag2 )
  *
- * Compare two html tag or name values. The tags are considered terminated if 
- * the parser encounters ">", null, quote, or space. 
+ * Compare two html tag or name values. The tags are considered terminated if
+ * the parser encounters ">", null, quote, or space.
  */
 
 int tagcmp(const char * tag1, const char * tag2) {
    while (*tag1 > ' ') {
       // if tag ended return true
       if ((*tag1 == '>') ||
-                (*tag1 == '\'') ||
-                (*tag1 == '\r') ||
-                (*tag1 == '\0') ||
-                (*tag1 == '"' )
+                 (*tag1 == '\'') ||
+                 (*tag1 == '\r') ||
+                 (*tag1 == 0)    ||
+                 (*tag1 == '"')
       ) {
           return TRUE;
       }
 
       // case insensitive compare - exit if not same
       if ((*tag1++ | 0x20)  != (*tag2++ | 0x20)) {
-    	  return FALSE;
+          return FALSE;
       }
    }
    // tag ended, return true
@@ -169,30 +163,30 @@ int tagcmp(const char * tag1, const char * tag2) {
 
 char * argnext(char * arg) {
    if (arg == NULL) {
-	   return NULL;
+       return NULL;
    }
    if (*arg <= ' ') {
-	   return NULL;
+       return NULL;
    }
    while (*arg > ' ') {
-	   arg++;
+       arg++;
    }
    while ((*arg == ' ') ||(*arg == '\t')) {
-	   arg++;
+       arg++;
    }
    if (*arg < ' ') {
-	   return NULL;
+       return NULL;
    } else {
-	   return arg;
+       return arg;
    }
 }
 
 int argterm(char * arg) {
    if (!arg) {
-	   return -1;
+       return -1;
    }
    while (*arg > ' ') {
-	   arg++;
+       arg++;
    }
    *arg = 0;
    return 0;
@@ -201,17 +195,17 @@ int argterm(char * arg) {
 
 /* get_tagparm(char * parm, char * html)
  *
- * Extract a tag parameter from passed html string. parm should be 
- * the name of the parameter,such as "name" or "color". 
+ * Extract a tag parameter from passed html string. parm should be
+ * the name of the parameter,such as "name" or "color".
  *
  * The html should contain the parm and a value, e.g. "color=red". The
- * value may be in single or double quotes. 
+ * value may be in single or double quotes.
  *
  * parm is not case-sensitive, however the returned value has case preserved.
  *
  * Returns C string name in new static buffer if OK
- * Returns NULL if parm is not found in html, or the parameter value is 
- *    not properly terminated. 
+ * Returns NULL if parm is not found in html, or the parameter value is
+ *    not properly terminated.
  */
 
 char * get_tagparm(const char * parm, const char * html, char * dest) {
@@ -220,13 +214,13 @@ char * get_tagparm(const char * parm, const char * html, char * dest) {
 
    *dest = 0;  // clear return value - assume failure
 
-   // First loop serches for parm in html, 
+   // First loop serches for parm in html,
    for ( cp = html; *cp >= ' '; cp++) {
       if (*cp == '>') { // end of tag, parm not found
          return NULL;
       }
       if ((*cp == *parm) && tagcmp(parm, cp)) {
-    	  break;
+          break;
       }
    }
    if (*cp <= ' ') { // end of html, parm not found
@@ -249,17 +243,17 @@ char * get_tagparm(const char * parm, const char * html, char * dest) {
 
    // Allow a quote after the equals sign
    if ((*cp == '\'') || (*cp == '"')) {
-	   cp++;
+       cp++;
    }
 
    // copy parameter value into buffer
    for (i = 0; i < TAGSIZE; i++) {
       if ((*cp == ' ') ||
-                (*cp == '\n') ||
-                (*cp == '\r') ||
-                (*cp == '\0') ||
-                (*cp == '\'') ||
-                (*cp == '"' )
+                 (*cp == '\n') ||
+                 (*cp == '\r') ||
+                 (*cp == 0   ) ||
+                 (*cp == '\'') ||
+                 (*cp == '"')
       ) {
           break;
       }
@@ -268,9 +262,9 @@ char * get_tagparm(const char * parm, const char * html, char * dest) {
 
    // check buffer size, null-terminate if OK
    if (i >= (TAGSIZE - 1)) {
-	   return NULL;
+       return NULL;
    } else {
-	   *dest = '\0';
+       *dest = 0;
    }
 
    return dest;
@@ -278,10 +272,10 @@ char * get_tagparm(const char * parm, const char * html, char * dest) {
 
 
 
-/* The options set per-file. One of these structures is included in every 
+/* The options set per-file. One of these structures is included in every
  * file object. These are also used to define a single static structure
- * to build the options for each file while the file's line is read from 
- * the input list. 
+ * to build the options for each file while the file's line is read from
+ * the input list.
  */
 
 struct option_set {
@@ -349,14 +343,14 @@ filedata::~filedata() {
    for (tmp = fdlist; tmp; tmp = tmp->next) {
       if (tmp == this) {
          if (last) {
-        	 last->next = tmp->next;
+             last->next = tmp->next;
          } else {
-        	 fdlist = tmp->next;
+             fdlist = tmp->next;
          }
 
          /* maintain list tail pointer */
          if (fdtail == this) {
-        	 fdtail = last;
+             fdtail = last;
          }
       }
       last = tmp;
@@ -386,24 +380,24 @@ ssifile::ssifile(char * ssiname, filedata * file) {
 
 class control;
 
-/* form - object containing info for a form that has been 
- * read from an HTML file. This is used to construct sample C code 
- * to process the form at runtime. 
+/* form - object containing info for a form that has been
+ * read from an HTML file. This is used to construct sample C code
+ * to process the form at runtime.
  */
 
 enum     form_method { UNDEFINED = 0, GET, POST };
 
 class form {
 public:
-   form *   next;
-   char     formname[NAMELENGTH];
+   form *     next;
+   char       formname[NAMELENGTH];
    filedata * file;
-   control * controls;
-   int      ctlcount;
-   int      flags;
+   control *  controls;
+   int        ctlcount;
+   int        flags;
 
-   enum     form_method method;
-   char     action[NAMELENGTH];
+   enum       form_method method;
+   char       action[NAMELENGTH];
 
    form(char * name);
 };
@@ -439,7 +433,7 @@ control::control(form * form, char * html) {
    }
    get_tagparm("name", html, name);
    get_tagparm("value", html, value);
-   
+
    // attach new control to passed form
    this->next = form->controls;
    form->controls = this;
@@ -447,7 +441,7 @@ control::control(form * form, char * html) {
    return;
 }
 
-/* clas to hold elements in a list of file names referred to by "location =" or 
+/* clas to hold elements in a list of file names referred to by "location =" or
  * "href = " statements.
  */
 
@@ -463,7 +457,7 @@ reference * references;
 
 reference::reference(const char * name) {
    if (strlen(name) >= NAMELENGTH) {
-      printf("refernce name \"%s\" too long (max %d)\n", name, NAMELENGTH);
+      printf("reference name \"%s\" too long (max %d)\n", name, NAMELENGTH);
       app_exit(-1);
    }
    strcpy(refname, name);
@@ -473,13 +467,13 @@ reference::reference(const char * name) {
    return;
 }
 
-reference * 
+reference *
 ref_lookup(char * refname) {
     reference * ref;
 
     for (ref = references; ref; ref = ref->next) {
         if (strncmp(refname, ref->refname, strlen(refname)) == 0) {
-        	return ref;
+            return ref;
         }
     }
 
@@ -488,14 +482,14 @@ ref_lookup(char * refname) {
 
 
 
-/* Option details for orthogonal processing. The saem structure 
+/* Option details for orthogonal processing. The saem structure
  * supports command line options and per-file options from the
  * line of the input file list.
  */
 
 struct option {
    const char     opt_char;            // char to invoke option
-   const char *   opt_help;            // help text 
+   const char *   opt_help;            // help text
    int            opt_flags;           // OF_CMDLINE or not
    int          (*opt_setopt)(struct option *, char * parm);
    void *         target;              // parameter for setop
@@ -506,10 +500,10 @@ struct option {
 #define OF_CMDLINE   1     // option is allowed on command line
 
 
-/* Generic option processing routines. These all accept: 
- * 1) The structure for the option to be processed, 
- * 2) pointer to the remaining args in the input line 
- * 
+/* Generic option processing routines. These all accept:
+ * 1) The structure for the option to be processed,
+ * 2) pointer to the remaining args in the input line
+ *
  * They all return the number of args from the input line processed. This
  * will be 0 if no additional args are used.
  */
@@ -544,11 +538,11 @@ int opt_setstring(struct option * opt, char * parm) {
 
 /* opt_makefunc()
  *
- * Make an SSI, CGI, or server-side push 'code' function. 
+ * Make an SSI, CGI, or server-side push 'code' function.
  *
- * "char * parm" is the args line, which should start with the name 
+ * "char * parm" is the args line, which should start with the name
  * for C routine to map to the the SSI, PUSH or FORM file.
- * 
+ *
  *
  * returns 0 if OK.
  */
@@ -566,8 +560,8 @@ int opt_makefunc(struct option * opt, char * parm) {
 
 
 
-/* maketoken()
- * 
+/* maketoken("", )
+ *
  * convert passed string into a unique token for switch/case statement
  */
 
@@ -575,7 +569,7 @@ int opt_makefunc(struct option * opt, char * parm) {
 
 char tokenbuf[NAMELENGTH + 9 + sizeof(VARS_PREFIX)];
 
-enum caseparms { UPPERCASE, LOWERCASE, NOCASE};
+enum caseparms { UPPERCASE, LOWERCASE, NOCASE };
 
 char * maketoken(const char * prefix, const char * name, unsigned number, enum caseparms caseparm) {
    int length = 0;
@@ -646,7 +640,6 @@ int opt_setcexp(struct option * opt, char * parm) {
       app_exit(-1);
    }
 
-
    file->ccode = codebuf;  /* Save for output pass */
    option->opmask |= opt->opt_maskbit;
 
@@ -656,13 +649,13 @@ int opt_setcexp(struct option * opt, char * parm) {
 
 
 struct option options[] = {
-   {  'a', "require authentication", OF_CMDLINE, 
+   {  'a', "require authentication", OF_CMDLINE,
       opt_setbool, &def_mask, OPT_AUTH },
    {  'c', "enable cache control for all files", OF_CMDLINE,
       opt_setbool, &def_mask, OPT_CACHE },
-   {   'o', "<outfile> send C data arrays to named file", OF_CMDLINE, 
+   {   'o', "<outfile> send C data arrays to named file", OF_CMDLINE,
       opt_setstring, &def_datafile, 0 },
-   {   'h', "<outfile> send C headers to named file", OF_CMDLINE, 
+   {   'h', "<outfile> send C headers to named file", OF_CMDLINE,
       opt_setstring, &def_hdrfile, 0 },
    {   'g', "<filename> generate C code to handle SSI or form data", OF_CMDLINE,
       opt_setstring, &optionTmp.codefile, 0 },
@@ -695,13 +688,13 @@ void usage() {
    printf("Usage: fxbuild [options] filelist \n");
    printf("   Command line options\n");
    for (i = 0; i < sizeof(options)/sizeof(struct option); i++) {
-      if (options[i].opt_flags & OF_CMDLINE)  
+      if (options[i].opt_flags & OF_CMDLINE)
          printf("   -%c %s\n",options[i].opt_char, options[i].opt_help );
    }
 
    printf("   filelist per-file options\n");
    for (i = 0; i < sizeof(options)/sizeof(struct option); i++) {
-      if ((options[i].opt_flags & OF_CMDLINE) == 0)  
+      if ((options[i].opt_flags & OF_CMDLINE) == 0)
          printf("   -%c %s\n",options[i].opt_char, options[i].opt_help );
    }
    printf("   \n");
@@ -717,11 +710,11 @@ int setoption(char * argp, char * argnext) {
       /* If parsing cmd line, skip non-command line options; etc. */
       if (fdlist == NULL) { // no fdlist means cmd line
          if ((options[i].opt_flags & OF_CMDLINE) == 0) {
-        	 continue;
+             continue;
          }
       } else { // not cmd line, skipcmd line options
          if (options[i].opt_flags & OF_CMDLINE) {
-        	 continue;
+             continue;
          }
       }
 
@@ -779,10 +772,10 @@ void mk_cname(filedata * file) {
 
    while (*fname && (fname< &file->filename[NAMELENGTH])) {
       if ((*fname >= '0') && (*fname <= 'z')) {
-    	  *cname++ = *fname++;
+          *cname++ = *fname++;
       } else {
          if (*cname != '_') {
-        	 *cname++ = '_';
+             *cname++ = '_';
          }
          fname++;
       }
@@ -807,6 +800,7 @@ FILE * open_outfile(char * name, int code) {
    fprintf(fd, " * It is not intended for manual editing\n */\n\n");
 
    if (code) {
+      fprintf(fd, "#include <stdint.h>\n\n");
       fprintf(fd, "#include \"websys.h\"\n");
       fprintf(fd, "#include \"webio.h\"\n");
       fprintf(fd, "#include \"webfs.h\"\n");
@@ -821,14 +815,14 @@ FILE * open_outfile(char * name, int code) {
 
 /* output_file()
  *
- * Each content file will have up to two output files, one for code 
- * and one for header info. These may vary from file to file, however 
- * many content files may share an output file, so either output file 
+ * Each content file will have up to two output files, one for code
+ * and one for header info. These may vary from file to file, however
+ * many content files may share an output file, so either output file
  * may or may not need to be created as each file's output is written.
  *
  * output_file() maintains a list of already opened output files by
  * both name and descriptor. All files are opened in write mode.
- * The file names passed are looked up in the list of open files. 
+ * The file names passed are looked up in the list of open files.
  * If not found, new files are opened and added the list.
  *
  * Returns FILE* of file to use or NULL if error
@@ -847,12 +841,12 @@ FILE * output_file(char * outfilename) {
    for (i = 0; i < OUTPUTFILES; i++) {
       /* See f we're at end of open file list */
       if (outputfiles[i].name[0] == 0) {
-    	  break;
+          break;
       }
 
       /* if file name matches, return fd */
       if ( argcmp(outputfiles[i].name, outfilename, NAMELENGTH) == 0) {
-    	  return(outputfiles[i].fd);
+          return(outputfiles[i].fd);
       }
    }
    if (i == OUTPUTFILES) {
@@ -863,13 +857,13 @@ FILE * output_file(char * outfilename) {
 
    /* Fall to here if file not found - create new one. */
    if (strstr(outfilename, ".h")) {
-	   fd = open_outfile(outfilename, 0);  /* header file*/
+       fd = open_outfile(outfilename, 0);  /* header file*/
    } else {
-	   fd = open_outfile(outfilename, 1);  /* code file */
+       fd = open_outfile(outfilename, 1);  /* code file */
    }
 
    if (fd == NULL) {
-	   return fd;
+       return fd;
    }
 
    /* for () loop left "I" indexing next free entry - fill it in */
@@ -879,10 +873,10 @@ FILE * output_file(char * outfilename) {
    return fd;     // Return new file descriptor
 }
 
-/* newform() 
+/* newform()
  *
  * Called when main routine hits a "<form ...>" tag in an input file.
- * this creates the new form object based on the content of the 
+ * this creates the new form object based on the content of the
  * <form ...> tag.
  *
  * Returns new form object if OK, else NULL.
@@ -892,7 +886,7 @@ form * newform(char * html, int length, filedata * file, int line) {
    char *   endbracket;
    char     tagname[TAGSIZE];
    form *   new_form;
-   
+
    endbracket = strchr(html, '>');
    if (!endbracket) {
       printf("warning: can't find end of '<form' tag in file %s\n", file->filename);
@@ -911,15 +905,15 @@ form * newform(char * html, int length, filedata * file, int line) {
    // Extract method and action
    get_tagparm("method", html, tagname);
    if (tagcmp(tagname, "GET")) {
-	   new_form->method = GET;
+       new_form->method = GET;
    } else if (tagcmp(tagname, "POST")) {
-	   new_form->method = POST;
+       new_form->method = POST;
    }
 
    get_tagparm("action", html, new_form->action);
 
    if (file->opset.opmask & OPT_NOWARN) {
-	   new_form->flags |= FF_NOWARN;
+       new_form->flags |= FF_NOWARN;
    }
 
    return new_form;
@@ -928,12 +922,12 @@ form * newform(char * html, int length, filedata * file, int line) {
 int bldform(filedata * newfile, FILE * outcode) {
    form *   formp;
 
-   if ((*newfile->opset.routine == 0) && 
-		      ((newfile->opset.opmask & OPT_NOWARN) == 0)
+   if ((*newfile->opset.routine == 0) &&
+              ((newfile->opset.opmask & OPT_NOWARN) == 0)
    ) {
-	      dtrap();
-	      printf("WARNING - form routine name not set for file %s\n", newfile->filename);
-	      return -1;
+          dtrap();
+          printf("WARNING - form routine name not set for file %s\n", newfile->filename);
+          return -1;
    }
 
    // printf the beginning of a form stub routine
@@ -944,7 +938,7 @@ int bldform(filedata * newfile, FILE * outcode) {
    // look the file up in the forms list
    for (formp = formlist; formp; formp = formp->next) {
       if ( strcmp(formp->action, newfile->filename) == 0) {
-    	  break;
+          break;
       }
    }
 
@@ -955,7 +949,7 @@ int bldform(filedata * newfile, FILE * outcode) {
              printf("WARNING: action \"%s\" (%s line %d) unreffed in input file forms.\n",
                  newfile->filename, listfilename, newfile->in_line);
 
-             fprintf(outcode, 
+             fprintf(outcode,
                  "/* WARNING - action \"%s\" (%s line %d) unreffed in input file forms. */\n",
                  newfile->filename, listfilename, newfile->in_line);
           }
@@ -970,10 +964,10 @@ int bldform(filedata * newfile, FILE * outcode) {
    for (int i = 0; i < 2; i++) {
       for (control * ctl = formp->controls; ctl; ctl = ctl->next) {
          if (*ctl->name == 0) {
-        	 continue;
+             continue;
          }
          if ( stricmp(ctl->name, "submit") == 0) {
-        	 continue;
+             continue;
          }
 
          // convert name to a C expression
@@ -994,7 +988,7 @@ int bldform(filedata * newfile, FILE * outcode) {
    formp->flags |= FF_CCODED;
 
    fprintf(outcode, "\t/* Add your code here */\n\n");
-   fprintf(outcode, "\treturn NULL;\n}\n\n\n");
+   fprintf(outcode, "\treturn 0;\n}\n\n\n");
    return 0;   // OK return code
 }
 
@@ -1004,20 +998,20 @@ int newref(const char * refname, const char * tagname) {
     char    tagvalue[TAGSIZE];
 
     if ( get_tagparm(tagname, refname, tagvalue) == 0) {
-    	return -1;
+        return -1;
     }
 
     taglen = strlen(tagvalue);
     if ((taglen > NAMELENGTH) || (taglen < 1)) {
-    	return -1;
+        return -1;
     }
 
     if (ref_lookup(tagvalue)) {
-    	return 1;
+        return 1;
     }
 
     if (tagcmp("javascript", tagvalue)) {
-    	return -1;
+        return -1;
     }
 
     new reference(tagvalue);
@@ -1045,7 +1039,7 @@ int main(int argc, char * argv[]) {
    filedata * newfile;
 
    printf("fsbuild 1.0 - Copyright 2007 by John Bartas\n");
-   
+
    parseargs(argc, argv);
 
    /* Open and test the input file list */
@@ -1070,10 +1064,11 @@ int main(int argc, char * argv[]) {
       listfile_line++;
 
       // skip commants and blank lines
-      if ((readbuf[0] == '\n') ||
-    	         (readbuf[0] == '\r') ||
-    	         (readbuf[0] == '\0')    ||
-    	         (readbuf[0] == '#' )
+      if (
+              (readbuf[0] == '\n') ||
+              (readbuf[0] == '\r') ||
+              (readbuf[0] == 0)    ||
+              (readbuf[0] == '#')
       ) {
           continue;
       }
@@ -1082,7 +1077,7 @@ int main(int argc, char * argv[]) {
 
       /* Reset the scratch option building struct with defaults. This may
        * be overwritten by args read from this file line. When we're done
-       * parsing the line, the modified defaults are the options for the 
+       * parsing the line, the modified defaults are the options for the
        * file.
        */
       strcpy(optionTmp.datafile, def_datafile);
@@ -1091,8 +1086,8 @@ int main(int argc, char * argv[]) {
       optionTmp.opmask = def_mask;
       memset( &optionTmp.routine, 0, sizeof(optionTmp.routine));
 
-      /* Parse the arge that may remain in the rest of this input file 
-       * line. The values are left in optionTmp. 
+      /* Parse the arge that may remain in the rest of this input file
+       * line. The values are left in optionTmp.
        */
       linearg = argnext(lp);
       while (linearg) {
@@ -1100,15 +1095,15 @@ int main(int argc, char * argv[]) {
          aadd = setoption(linearg, nextarg);
          linearg = nextarg;
          while (aadd--) {
-        	 linearg = argnext(linearg);
+             linearg = argnext(linearg);
          }
       }
 
-      /* Now copy the file option values form optionTmp into the new file 
+      /* Now copy the file option values form optionTmp into the new file
        * tracking pobject.
        */
       memcpy( &newfile->opset, &optionTmp, sizeof(optionTmp) );
-   
+
    }
 
    /* Done reading input file */
@@ -1116,12 +1111,12 @@ int main(int argc, char * argv[]) {
 
    outheader = output_file(def_hdrfile);
    if (!outheader) {
-	   app_exit (-1);
+       app_exit (-1);
    }
 
    for (newfile = fdlist; newfile; newfile = newfile->next) {
-      /* Each content file will have two output files, one for code and one 
-       * for header info. These may vary from file to file, however many 
+      /* Each content file will have two output files, one for code and one
+       * for header info. These may vary from file to file, however many
        * content files may share an output file, so either file may or may
        * not need to be created here. dump the work of resolving this on
        * the outfiles() subsystem.
@@ -1129,7 +1124,7 @@ int main(int argc, char * argv[]) {
 
       outdata = output_file(newfile->opset.datafile);
       if (!outdata) {
-    	  app_exit (-1);
+          app_exit (-1);
       }
 
       if ((newfile->opset.opmask & NON_BINARY_FILE) == 0) {
@@ -1153,24 +1148,24 @@ int main(int argc, char * argv[]) {
                cp = (char *)(&readbuf[i]);
 
                if (*cp == '\n') {
-            	   indata_line++;
+                   indata_line++;
                }
 
                // Check each byte for start of form or SSI text
                if (*cp == '<') {
                   if ( tagcmp("<form", cp) == TRUE) {
                       if (currentform) {
-                          printf("Warning: nested form, %s line %d\n", newfile->filename, indata_line);
+                          printf("Warnig: nested form, %s line %d\n", newfile->filename, indata_line);
                       }
                      currentform = newform(cp, sizeof(readbuf) - i, newfile, indata_line);
                   } else if ( tagcmp("</form", cp) == TRUE) {
-                	  currentform = NULL;
+                      currentform = NULL;
                   }
 
                   // Pick up controls inside forms
                   if (currentform) {
                      if ( tagcmp("<input", cp) == TRUE) {
-                    	 new control(currentform, cp);
+                         new control(currentform, cp);
                      }
                   }
 
@@ -1179,7 +1174,7 @@ int main(int argc, char * argv[]) {
                      char ssiname[TAGSIZE];
                      get_tagparm("file", cp, ssiname);
                      if (*ssiname) {
-                    	 new ssifile(ssiname, newfile);
+                         new ssifile(ssiname, newfile);
                      }
                   }
                } else if (tagcmp("location", (char*)&readbuf[i] ) == TRUE) {
@@ -1188,7 +1183,7 @@ int main(int argc, char * argv[]) {
                     */
                    newref((char*)&readbuf[i], "location");
                } else if (tagcmp("href", (char*)&readbuf[i] ) == TRUE) {
-                   /* if we've hit an href expression read in the 
+                   /* if we've hit an href expression read in the
                     * file name and list it as a referenced file.
                     */
                    newref((char*)&readbuf[i], "href");
@@ -1196,7 +1191,7 @@ int main(int argc, char * argv[]) {
 
                fprintf(outdata, "0x%02x, ", readbuf[i]);
                if (((i+1) % 12) == 0) {
-            	   fprintf(outdata, "\n");
+                   fprintf(outdata, "\n");
                }
             }
             newfile->casize += length;
@@ -1210,24 +1205,24 @@ int main(int argc, char * argv[]) {
    /* Open the default files for building efs linked list */
    outdata = output_file(def_datafile);
    if (!outdata) {
-	   app_exit (-1);
+       app_exit (-1);
    }
 
    outheader = output_file(def_hdrfile);
    if (!outheader) {
-	   app_exit (-1);
+       app_exit (-1);
    }
 
    outcode = output_file(def_codefile);
    if (!outcode) {
-	   app_exit (-1);
+       app_exit (-1);
    }
 
    fprintf(outdata, "em_file efslist[%u] = {\n", infiles);
 
 
-   /* Loop through the file list and build the EFS list in the output file. 
-    * The C vars switch code (if any) is appended after this loop 
+   /* Loop through the file list and build the EFS list in the output file.
+    * The C vars switch code (if any) is appended after this loop
     */
 
    efloop = 0;
@@ -1304,10 +1299,10 @@ int main(int argc, char * argv[]) {
       if (strlen(emfflags) == 0) {
           strcat(emfflags, "0x0000");
       } else {
-          emfflags[strlen(emfflags) - 2] = 0; // step on trailing '|'
+          emfflags[strlen(emfflags) - 3] = 0; // step on trailing '|'
       }
 
-      fprintf(outdata, "	(%s), /* flags  */\n},\n", emfflags);
+      fprintf(outdata, "	(%s), /* flags */\n},\n", emfflags);
    }
    fprintf(outdata, "};\n\n");
 
@@ -1318,43 +1313,38 @@ int main(int argc, char * argv[]) {
       fprintf(outcode, "\t" SINT " e;\n\n\tswitch(token)\n\t{\n");
       fprintf(outheader, "\n\n");
 
-
       /* Pass to make the C expression code */
       efloop = 0;
       for (newfile = fdlist; newfile; newfile = newfile->next) {
          efloop++;
-
          if (newfile->ccode == NULL) {
-        	 continue;
+             continue;
          }
          fprintf(outcode, "%s\n\t\t\tbreak;\n", newfile->ccode);
 
-         fprintf(outheader, "#define %s %u\n",
-                 maketoken(VARS_PREFIX, newfile->filename, newfile->filenumber, UPPERCASE),
-                 newfile->filenumber
-         );
+         fprintf(outheader, "#define %s %u\n", maketoken(VARS_PREFIX, newfile->filename, newfile->filenumber, UPPERCASE), newfile->filenumber);
       }
       fprintf(outcode, "\t\tdefault:\n\t\t\te = WI_E_BADPARM;\n\t\t\tbreak;\n");
       fprintf(outcode, "\t}\n\treturn e;\n}\n\n");
       fprintf(outheader, "\n\n");
    }
 
-   /* Make sure all the forms have stubs. This helps catch frustrating 
+   /* Make sure all the forms have stubs. This helps catch frustrating
     * misspelling problems between the html and the input file.
     */
    for (form * formp = formlist; formp; formp = formp->next) {
       if (((formp->flags & FF_CCODED) == 0) && (formp->action[0])) {
-         /* No routine stub for form->action found in the forms list, 
+         /* No routine stub for form->action found in the forms list,
           * however action could also be a plain file - check these:
           */
 
          for (newfile = fdlist; newfile; newfile = newfile->next) {
              if ( strcmp( newfile->filename, formp->action) == 0) {
-            	 break;
+                 break;
              }
          }
          if (newfile) {
-        	 continue;
+             continue;
          }
 
          if ((formp->flags & FF_NOWARN) == 0) {
