@@ -1,4 +1,4 @@
-Readme file for Webio embedded we server directory.
+Readme file for Webio embedded web server directory.
 
 	Last Edit Dec. 31st, 2011
 

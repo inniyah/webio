@@ -1,6 +1,8 @@
 # Webio
 
-Readme file for Webio embedded we server directory.
+Webio is a small-footprint web server, designed for embedding in an application or an embedded system. It includes a tool for generating embedded SSI and CGI routines, and a detailed programmers manual.
+
+Readme file for Webio embedded web server directory.
 
 	Last Edit Dec. 31st, 2011
 
