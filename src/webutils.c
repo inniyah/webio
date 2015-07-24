@@ -497,17 +497,19 @@ struct wi_ftype {
         const char * mimetype;   /* Mime description */
         int          flags;      /* bitmask of the FT_ flags */
 } wi_ftypes[] = {
-    /* JPG */  { 0x4A504700, "image/jpeg",                    FT_BINARY },
-    /* JPEG */ { 0x4A504547, "image/jpeg",                    FT_BINARY },
-    /* PNG */  { 0x504E4700, "image/png",                     FT_BINARY },
-    /* GIF */  { 0x47494600, "image/gif",                     FT_BINARY },
-    /* WAV */  { 0x57415600, "audio/wav",                     FT_BINARY },
-    /* MP3 */  { 0x4D503300, "audio/mp3",                     FT_BINARY },
-    /* WMV */  { 0x574D5600, "video/x-ms-wmv",                FT_BINARY },
-    /* PDF */  { 0x50444600, "application/pdf",               FT_BINARY },
-    /* SWF */  { 0x53574600, "application/x-shockwave-flash", FT_BINARY },
-    /* BIN */  { 0x66494E00, "application/octet-binary",      FT_BINARY },
-    /* TXT */  { 0x54585400, "text/plain",                    FT_ASCII  }
+	    /* JPG */  { 0x4A504700, "image/jpeg",                    FT_BINARY },
+	    /* JPEG */ { 0x4A504547, "image/jpeg",                    FT_BINARY },
+	    /* PNG */  { 0x504E4700, "image/png",                     FT_BINARY },
+	    /* GIF */  { 0x47494600, "image/gif",                     FT_BINARY },
+	    /* WAV */  { 0x57415600, "audio/wav",                     FT_BINARY },
+	    /* MP3 */  { 0x4D503300, "audio/mp3",                     FT_BINARY },
+	    /* WMV */  { 0x574D5600, "video/x-ms-wmv",                FT_BINARY },
+	    /* PDF */  { 0x50444600, "application/pdf",               FT_BINARY },
+	    /* SWF */  { 0x53574600, "application/x-shockwave-flash", FT_BINARY },
+	    /* BIN */  { 0x66494E00, "application/octet-binary",      FT_BINARY },
+	    /* JS */   { 0x4A530000, "application/javascript",        FT_ASCII  },
+	    /* CSS */  { 0x43535300, "text/css",                      FT_ASCII  },
+	    /* TXT */  { 0x54585400, "text/plain",                    FT_ASCII  }
 };
 
 
