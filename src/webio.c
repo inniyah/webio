@@ -842,7 +842,7 @@ int wi_redirect(wi_sess * sess, const char * filename) {
    sess->ws_last = wi_cticks;
 
    /* unlink the completed form file from the session */
-   sess->ws_filelist = sess->ws_filelist->wf_next;
+   wi_fclose(sess->ws_filelist);
 
    /* Find and open new file to return, */
    error = wi_fopen(sess, filename, "rb");
@@ -869,7 +869,7 @@ int wi_redirect_get(wi_sess * sess, char * filename) {
    sess->ws_last = wi_cticks;
 
    /* unlink the completed form file from the session */
-   sess->ws_filelist = sess->ws_filelist->wf_next;
+   wi_fclose(sess->ws_filelist);
 
    /* parse any name/value pairs appended to file name */
    pairs = strchr(filename, '?');

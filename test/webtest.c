@@ -124,7 +124,7 @@ int wfs_auth(void * fd, const char * name, const char * password) {
 
 
 void wi_dtrap(void) {
-   dprintf("dtrap - need breakpoint");
+   dprintf("dtrap - need breakpoint\n");
 }
 
 void wi_panic(char * msg) {
